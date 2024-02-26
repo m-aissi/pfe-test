@@ -1,0 +1,70 @@
+/* You can add global styles to this file, and also import other style files */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css");
+.card-image {
+    object-fit: cover; /* Redimensionne l'image pour remplir complètement le conteneur */
+    object-position: center; /* Centre l'image horizontalement et verticalement dans le conteneur */
+    width: 100%; /* Définit la largeur de l'image sur 100% du conteneur parent */
+    height: 100%; /* Définit la hauteur de l'image sur 100% du conteneur parent */
+  }
+
+  .center-cropped {
+  width: 300px;
+  height: 200px;
+  background-position: 50% 30%;
+  background-repeat: no-repeat;
+
+} 
+
+#cardPreviewImage{
+  object-fit: cover; 
+  width: 100%; 
+  height: 100%;
+}
+
+
+.icon-wrap {
+    font-size: 20px;
+    line-height: 20px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px;
+    border-radius: 4px;
+  }
+
+
+  
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+
+.scroll {
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+
+body{
+  background-color: #472D2D;
+}
+
+
+.dialog-panel
+  .mat-mdc-dialog-container
+  .mdc-dialog__container
+  .mat-mdc-dialog-surface {
+    background-color:#553939 ; 
+    color:white;
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.5);
+  }
+
+
+  .test-9 {
+    margin-left: ($spacer * 4) !important;
+  }

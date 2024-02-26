@@ -1,0 +1,49 @@
+<nav class="navbar fixed-top bg-dark bg-opacity-75" style="z-index: 500 ;">
+  <div class="container-fluid" style="color:white;">
+    <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="my-2 ms-3 fs-6 me-auto ">
+    <button type="button" class="btn btn-primary mx-1" (click)="exportToClipboard()">Export <i class="bi bi-arrow-bar-up fs-6 "></i></button>
+    <button type="button" class="btn btn-secondary mx-1">Create <i class="bi bi-plus-lg fs-6 "></i></button>
+    <button type="button" class="btn btn-secondary mx-1">Merge Archetypes <i class="bi bi-files fs-6 "></i></button>
+    <span class="p-1 float-start mx-1">
+      {{total_owned}} <i class="bi-file-break-fill"></i>
+    </span>
+    <span class="p-1 float-start mx-1 ">
+      {{total_wanted}} <i class="bi-currency-euro"></i>
+    </span>
+    <i class="bi bi-question-circle-fill h3 mx-1"></i>
+    <i class="bi bi-person-fill h3 mx-1"></i>
+  </div>
+</nav>
+  
+<div class="card-group mx-auto justify-content-center " style="margin-top:7vh;">
+  <div *ngFor="let result of selectedArchetype " class="m-3" >
+
+        <div class="center-cropped d-flex align-items-end position-relative"  style="background-image: url('{{result.cardHeader}}');">
+          <div *ngIf="!result.favorite" class="position-absolute top-0 end-0 icon-wrap p-1">
+            <i class="bi-star" style="font-size: 1.5rem; color: white;" (click)="setFavorite(results.indexOf(result))"> </i>
+
+          </div>
+          <div *ngIf="result.favorite" class="position-absolute top-0 end-0 icon-wrap2 p-1">
+            <i  class="bi-star-fill" style="font-size: 1.5rem; color: white;"  (click)="setFavorite(results.indexOf(result))"> </i>
+
+          </div>
+        <div  class="position-relative bg-black text-white bg-opacity-50 w-100" (click)="openDialog(result.cardList,selectedArchetype.indexOf(result))">
+          <div class=" m-2 fs-4">
+            {{result.archetypeName}} 
+          </div>
+          <div class="m-2 ">
+            <span class="p-1 float-start">
+              {{result.totalPrice}} <i class="bi-currency-euro"></i>
+            </span>
+            <span class="p-1 float-end">
+              {{result.ownedCardsCount}}/{{result.cardList.length}} <i class="bi-file-break-fill"></i>
+            </span>
+            <span class="p-1 float-end">
+              {{result.priceWantedTotal}} <i class="bi-currency-euro"></i><i class="bi-heart-fill mt-2"></i>
+            </span>
+          </div>
+      </div>  
+      </div>
+  </div>
+</div>
+
