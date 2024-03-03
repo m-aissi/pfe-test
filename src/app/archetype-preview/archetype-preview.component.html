@@ -1,6 +1,6 @@
-<div style="z-index: 1000;" class="d-flex flex-row justify-content-evenly object-fit-fill  ">
+<div style="overflow-y:hidden;" class="d-flex flex-row justify-content-evenly ">
     <!-- contient la zone de preview des cartes    -->
-    <div style="width:93vh;height:85vh;" class="scroll m-3 d-flex align-content-start  flex-wrap   " > 
+    <div style="width:42.3vw;height:83vh;" class="scroll m-3 d-flex align-content-start  flex-wrap   " > 
         <div *ngFor="let result of cardList" class="position-relative ">
 
             <div style="width:13vh;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="cardSelected = cardList.indexOf(result) " >
@@ -15,21 +15,21 @@
         </div>
     </div>
     <!-- contient les infos de la carte selectionnée -->
-    <div style="padding: 0; margin: 0; width: 50vh; height: 87vh; text-align: center;">
-        <div id="cardPreviewZone" class="mx-auto mt-5 card-image" 
-            [ngStyle]="{'width': '45vh', 'height': '65vh'}">
+    <div style="padding: 0; margin: 0; width: 50vh; text-align: center;">
+        <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 
+            [ngStyle]="{'width': '20vw', 'height': '65vh'}">
             <img id='cardPreviewImage' [src]="cardList[cardSelected].cardImg" alt="Card Preview">
         </div>    
         <div class="justify-content-center">
-            <p class=" mx-auto fs-4 pt-3">{{cardList[cardSelected].cardName}}</p>
-            <p><span class="fs-6">Cardmarket price : {{cardList[cardSelected].cardPrice}}€</span></p>
-            <p class="fs-5">{{nbOwned}}/{{cardList.length}} <i class="bi-file-break "></i> <ng-container class="ms-auto">{{nbOwnedFav}}/{{nbFav}} <i class="bi bi-heart-fill"></i></ng-container></p>
+            <div class="mx-auto fs-5 pt-2">{{cardList[cardSelected].cardName}}</div>
+            <div><span class="fs-7">Cardmarket price : {{cardList[cardSelected].cardPrice}}€</span></div>
+            <div class="fs-7">{{nbOwned}}/{{cardList.length}} <i class="bi-file-break "></i> <ng-container class="ms-auto">{{nbOwnedFav}}/{{nbFav}} <i class="bi bi-heart-fill"></i></ng-container></div>
     
-            <div class="justify-content-evenly">
-                <button class="btn btn-danger mx-3" (click)="setAllFavorite()"> <i class="bi bi-heart-fill"></i> All</button>    
-                <button class="btn btn-success mx-3" (click)="exportToClipboard()">Export  <i class="bi bi-file-earmark-arrow-up-fill"></i></button>
-                <button class="btn btn-info mx-3" (click)="cardSelected = cardSelected + 1"> <i class="bi bi-arrow-right"></i></button>
+            <div class="justify-content-evenly mt-1">
+                <button class="btn-sm btn btn-danger mx-3" (click)="setAllFavorite()"> <i class="bi bi-heart-fill"></i> All</button>    
+                <button class="btn-sm btn btn-success mx-3" (click)="exportToClipboard()">Export  <i class="bi bi-file-earmark-arrow-up-fill"></i></button>
+                <button class="btn-sm btn btn-info mx-3" (click)="cardSelected = cardSelected + 1"> <i class="bi bi-arrow-right"></i></button>
             </div>
         </div>
     </div>
-    </div>
+</div>

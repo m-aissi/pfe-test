@@ -3,6 +3,7 @@
   import {MatDialog, MatDialogRef, MatDialogModule, MAT_DIALOG_DATA} from '@angular/material/dialog';
   import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview.component';  
 import axios from 'axios';
+import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 
 
 interface Archetype {
@@ -84,6 +85,29 @@ export class AppComponent {
     });
   }
 
+  openDialog2(data : any, i : any) {
+    let dial = this.dialogRef.open(MergeArchetypeComponent, {
+       width: '100%',
+       height: '90%',
+       panelClass: 'dialog-panel',
+       data: {
+         dataKey: data
+       }
+     }); 
+   
+     dial.afterClosed().subscribe(nbOwned => {
+       console.log(`Dialog result: ${nbOwned}`);
+       console.log(this.results);
+       this.results[i].ownedCardsCount = nbOwned;
+       console.log(data);
+       console.log(this.selectedArchetype.ownedCardsCount);
+       console.log("cc"+this.selectedArchetype);
+       this.updateAllWantedPrice();  
+       this.updateTotals();
+ 
+     });
+   }
+   
   exportToClipboard() {
     let text = "";
     for (let i = 0; i < this.results.length; i++) {

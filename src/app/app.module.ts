@@ -10,11 +10,13 @@ import { MatDialogModule} from '@angular/material/dialog';
 import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { DragDropModule } from "@angular/cdk/drag-drop";
+import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    ArchetypePreviewComponent
+    ArchetypePreviewComponent,
+    MergeArchetypeComponent
   ],
   imports: [
     BrowserModule,
