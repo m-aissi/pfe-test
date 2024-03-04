@@ -152,32 +152,33 @@ export class AppComponent {
             cardAttribute: res.data.data[i].attribute
           });
       }
+      let dial = this.dialogRef.open(CreateArchetypeComponent, {
+        width: '100%',
+        height: '90%',
+        panelClass: 'dialog-panel',
+        data: {
+          dataKey: cardList
+        }
+      });
       //on va afficher cardList dans la console
     });
     //on va boucler sur cardlist 
     //on affiche cardList dans la console
 
 
-    let dial = this.dialogRef.open(CreateArchetypeComponent, {
-      width: '100%',
-      height: '90%',
-      panelClass: 'dialog-panel',
-      data: {
-        dataKey: cardList
-      }
-    });
 
-    dial.afterClosed().subscribe(nbOwned => {
-      console.log(`Dialog result: ${nbOwned}`);
-      console.log(this.results);
-      this.results[i].ownedCardsCount = nbOwned;
-      console.log(data);
-      console.log(this.selectedArchetype.ownedCardsCount);
-      console.log("cc" + this.selectedArchetype);
-      this.updateAllWantedPrice();
-      this.updateTotals();
 
-    });
+    // dial.afterClosed().subscribe(nbOwned => {
+    //   console.log(`Dialog result: ${nbOwned}`);
+    //   console.log(this.results);
+    //   this.results[i].ownedCardsCount = nbOwned;
+    //   console.log(data);
+    //   console.log(this.selectedArchetype.ownedCardsCount);
+    //   console.log("cc" + this.selectedArchetype);
+    //   this.updateAllWantedPrice();
+    //   this.updateTotals();
+
+    // });
 
 
   }
