@@ -24,7 +24,7 @@ export class CreateArchetypeComponent {
   //on va l'initialiser avec les 50 premiers elements de data.dataKey
   cardList : CardSearch[] = [];
 
-  
+  pagination : any = 0;
   archetypeCover : any;
   nbOwned : any;
   nbOwnedFav : any;
@@ -32,7 +32,20 @@ export class CreateArchetypeComponent {
   constructor(
     public dialogRef: MatDialogRef<CreateArchetypeComponent>,  
     @Inject(MAT_DIALOG_DATA) public data: any
- ) { }
+ ) {
+
+    // Directly access the dataKey property
+    this.cardListComplete = this.data.dataKey;
+
+    for (let result of this.cardList) {
+      console.log("happy");
+    }
+
+    //how to sleep in typescript
+    //await new Promise(r => setTimeout(r, 2000));
+    this.getCardList();
+
+  }
  closeDialog() {
   this.isDialogClosed = true; // Ajoutez cette ligne
   this.dialogRef.close(this.nbOwned);
@@ -44,16 +57,14 @@ ngOnDestroy() {
 }
 
 ngOnInit() {
-  // Directly access the dataKey property
-    this.cardListComplete = this.data.dataKey;
-  this.cardList = this.cardListComplete.splice(0, 50);
-  console.log(Array.isArray(this.cardListComplete));
-  //output : true
-  //on a bien un tableau... mais on ne peut pas boucler dessus...
-  this.changePagination(0);
-  console.log(this.cardListComplete.at(0));
-} 
 
+} 
+  getCardList(){
+    let min = this.pagination * 50;
+    let max = this.pagination * 50 + 50;
+    this.pagination++;
+    return this.cardList = this.cardListComplete.slice(min,max); 
+  }
   changePagination(i : any){
     this.cardList = this.cardListComplete.slice(i*50, i*50+50);
   }
