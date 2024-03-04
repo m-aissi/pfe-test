@@ -2,7 +2,7 @@
   <div class="container-fluid" style="color:white;">
     <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="input-group-text my-2 ms-3 fs-6 me-auto ">
     <button type="button" class="btn btn-primary mx-1" (click)="exportToClipboard()">Export <i class="bi bi-arrow-bar-up fs-6 "></i></button>
-    <button type="button" class="btn btn-secondary mx-1">Create <i class="bi bi-plus-lg fs-6 "></i></button>
+    <button type="button" class="btn btn-secondary mx-1" (click)="openDialog3(selectedArchetype,'test')">Create <i class="bi bi-plus-lg fs-6 "></i></button>
     <button type="button" class="btn btn-secondary mx-1" (click)="openDialog2(selectedArchetype,'test')">Merge Archetypes <i class="bi bi-files fs-6 "></i></button>
     <span class="p-1 float-start mx-1">
       {{total_owned}} <i class="bi-file-break-fill"></i>
@@ -10,12 +10,10 @@
     <span class="p-1 float-start mx-1 ">
       {{total_wanted}} <i class="bi-currency-euro"></i>
     </span>
-    <i class="bi bi-question-circle-fill h3 mx-1"></i>
-    <i class="bi bi-person-fill h3 mx-1"></i>
   </div>
 </nav>
   
-<div class="card-group mx-auto justify-content-center " style="margin-top:7vh;">
+<div class="card-group mx-auto justify-content-center " style="margin-top:11vh;">
   <div *ngFor="let result of selectedArchetype " class="m-3" >
 
         <div class="center-cropped d-flex align-items-end position-relative"  style="background-image: url('{{result.cardHeader}}');">

@@ -11,12 +11,14 @@ import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { DragDropModule } from "@angular/cdk/drag-drop";
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
+import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ArchetypePreviewComponent,
-    MergeArchetypeComponent
+    MergeArchetypeComponent,
+    CreateArchetypeComponent
   ],
   imports: [
     BrowserModule,

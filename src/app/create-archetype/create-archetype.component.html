@@ -1,0 +1,19 @@
+<div style="overflow-y:hidden;" class="d-flex flex-row justify-content-evenly ">
+    <!-- contient la zone de preview des cartes    -->
+    <div style="width:42.3vw;height:83vh;" class="scroll m-3 d-flex align-content-start  flex-wrap   " > 
+        <div *ngFor="let result of cardList" class="position-relative ">
+
+            <div style="width:13vh;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="cardSelected = cardList.indexOf(result) " >
+                <div class="position-absolute top-0 end-0 py-1" style="background:rgba(0, 0, 0, 0.5);vertical-align: middle;" >
+                </div>
+            </div> 
+        </div>
+    </div>
+    <!-- contient les infos de la carte selectionnée -->
+    <!-- <div style="padding: 0; margin: 0; width: 50vh; text-align: center;">
+        <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 
+            [ngStyle]="{'width': '20vw', 'height': '65vh'}">
+            <img id='cardPreviewImage' [src]="cardList[cardSelected].cardImg" alt="Card Preview">
+        </div>    
+    </div> -->
+</div>
