@@ -1,16 +1,90 @@
-<div style="overflow-y:hidden;" class="d-flex flex-row justify-content-evenly ">
+<div class="d-flex flex-wrap p-2">
     <!-- contient la zone de preview des cartes    -->
-    <button class="btn btn-primary" (click)="getCardList()">Get Card List</button>
 
-    <div style="width:42.3vw;height:83vh;" class="scroll m-3 d-flex align-content-start  flex-wrap   " > 
-        <div *ngFor="let result of cardList" class="position-relative ">
-            
-            <div style="width:13vh;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="cardSelected = cardList.indexOf(result) " >
-                <div class="position-absolute top-0 end-0 py-1" style="background:rgba(0, 0, 0, 0.5);vertical-align: middle;" >
-                </div>
-            </div> 
+        <div style="width:27.8vw;height:82vh;" class="scroll m-3 d-flex align-content-start  flex-wrap " > 
+            <div *ngFor="let result of cardList" class="position-relative ">
+                
+                <div style="width:13vh;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="cardSelected = cardList.indexOf(result) " >
+                    <div class="position-absolute top-0 end-0 py-1" style="background:rgba(0, 0, 0, 0.5);vertical-align: middle;" >
+                    </div>
+                </div> 
+                
+            </div>
+            <div class="m-2">
+                <button type="button" class="btn btn-secondary btn-sm " (click)="getCardList()">Show more...</button>
+            </div>
         </div>
-    </div>
+        
+        <div style=" width: 27vw; max-height: 80vh; " class="bg-secondary p-2 m-2 text-center d-flex flex-column" >
+            <div class="d-flex flex-row ">
+                <!-- contient les infos de la carte selectionnée -->
+                <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 
+                    [ngStyle]="{'width': '17.7vh', 'height': '25.8vh'}">
+                    <img id='cardPreviewImage' [src]="cardList[0].cardImg" alt="Card Preview">
+                </div>    
+                <div style="width: 17vw; height: 25.8vh; overflow-y: auto;">
+                    <p> {{cardList[0].cardName}} </p>
+                    <p>[Spell Card][Quick Effect] Level X</p>
+                    <p>{{cardList[0].cardDescription}}</p>
+                    <p>ATK 500 /DEF 500</p>            
+
+                </div>
+            </div>
+            <div class="mt-auto">
+                <label for="search">Search:</label>
+                <input type="text" id="search" name="search">
+                <br>
+
+                <br>
+                <label for="rel">DEF:</label>
+                <input type="text" id="rel" name="rel">
+                
+                <label for="atk">ATK:</label>
+                <input type="number" id="atk" name="atk">
+                <br>
+                <label for="atk">Link:</label>
+                <input type="number" id="atk" name="atk">
+                
+                <label for="atk">Scale:</label>
+                <input type="number" id="atk" name="atk">
+                <br>
+                <label for="attribute">Attribute:</label>
+                <select id="attribute" name="attribute">
+                    <option value="0">Select Attribute</option>
+                    <!-- Add more attribute options here -->
+                </select>
+                <label for="type">Type:</label>
+                <select id="type" name="type">
+                    <option value="0">Select Type</option>
+                    <!-- Add more type options here -->
+                </select>
+                <br>
+                <label for="race">Race:</label>
+                <select id="race" name="race">
+                    <option value="0">Select Race</option>
+                    <!-- Add more race options here -->
+                </select>
+                <br>
+ 
+            </div>
+        </div>
+        <div style=" width: 20vw; max-height: 80vh; " class="bg-secondary p-2 m-2 text-center" >
+            <h3> Archetyps to be merged : </h3>
+            <ul style="max-height: 60vh;" class="list-group scroll ">
+                <li *ngFor="let result of cardList" class="list-group-item mb-1 bg_sombre">
+                  <div class="d-flex justify-content-between">
+                    <div class="fs-5 my-auto">{{result.cardName}}</div>
+                    <!-- on ajout un boutton pour ajouter le result dans la liste des archetype selectionnés -->
+                  </div>
+                </li>
+            </ul>
+            
+            <h2> Merged into ... </h2>
+            <input type="text" placeholder="New name..."  class="mb-1  input-group-text" style="max-width: 13vw;">
+            <button class="btn bg_sombre mt-2">Merge <i class="bi bi-union"></i></button>
+    
+        </div>
+
     <!-- contient les infos de la carte selectionnée -->
     <!-- <div style="padding: 0; margin: 0; width: 50vh; text-align: center;">
         <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 

@@ -60,16 +60,11 @@ ngOnInit() {
 
 } 
   getCardList(){
-    let min = this.pagination * 50;
-    let max = this.pagination * 50 + 50;
+    let min = 0;
+    let max = this.pagination * 16 + 16;
     this.pagination++;
     return this.cardList = this.cardListComplete.slice(min,max); 
   }
-  changePagination(i : any){
-    this.cardList = this.cardListComplete.slice(i*50, i*50+50);
-  }
-  changePreview(i : any){
-    this.cardSelected = i;
-  }
+
 
 }
