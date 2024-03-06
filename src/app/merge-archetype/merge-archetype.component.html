@@ -1,8 +1,8 @@
-    <div class="d-flex flex-wrap p-2">
-      <div style="max-height: 80vh; overflow-y: auto  ; width: 30vw;" class="bg-secondary p-2 m-2">
+    <div class="d-flex flex-wrap p-2 mx-auto" data-bs-theme="dark">
+      <div style="max-height: 80vh; overflow-y: auto  ; width: 30vw;" class="bg_secondary_50 rounded-1 p-2 m-2" data-bs-theme="dark">
         <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="mb-1 fs-6 me-auto input-group-text">
         <h3> Archetyps : </h3>
-        <ul class="list-group ">
+        <ul class="list-group " >
             <li *ngFor="let result of archetypList" class="list-group-item mb-1 bg_sombre">
                 <div class="d-flex justify-content-between">
                   <div class="fs-5 my-auto  ">{{result.archetypeName}}</div>
@@ -14,7 +14,7 @@
         </ul>
       </div>
 
-      <div style="max-height: 80vh; overflow-y: auto   ; width: 30vw; " class="bg-secondary p-2 m-2 pt-5">
+      <div style="max-height: 80vh; overflow-y: auto   ; width: 30vw; " class="bg_secondary_50 rounded-1 p-2 m-2 pt-5"  data-bs-theme="dark">
         <!-- <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="my-2 ms-3 fs-6 me-auto "> -->
         <h3> Archetyps to be merged : </h3>
         <ul class="list-group ">
@@ -28,7 +28,7 @@
             </li>
         </ul>
       </div>
-      <div style=" width: 15vw; max-height: 30vh; " class="bg-secondary p-2 m-2 text-center" >
+      <div style=" width: 15vw; max-height: 30vh; " class="bg_secondary_50 rounded-1 p-2 m-2 text-center" >
         <h2> Merged into ... </h2>
         <input type="text" placeholder="New name..."  class="mb-1  input-group-text" style="max-width: 13vw;">
         <button class="btn bg_sombre mt-2">Merge <i class="bi bi-union"></i></button>

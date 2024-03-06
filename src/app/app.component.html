@@ -1,4 +1,4 @@
-<nav class="navbar fixed-top bg-dark bg-opacity-75" style="z-index: 500 ;">
+<nav class="navbar fixed-top bg-dark bg-opacity-75" data-bs-theme="dark" style="z-index: 500 ;">
   <div class="container-fluid" style="color:white;">
     <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="input-group-text my-2 ms-3 fs-6 me-auto ">
     <button type="button" class="btn btn-primary mx-1" (click)="exportToClipboard()">Export <i class="bi bi-arrow-bar-up fs-6 "></i></button>
@@ -13,10 +13,10 @@
   </div>
 </nav>
   
-<div class="card-group mx-auto justify-content-center " style="margin-top:11vh;">
-  <div *ngFor="let result of selectedArchetype " class="m-3" >
+<div class="card-group mx-auto justify-content-center " data-bs-theme="dark" style="margin-top:11vh;">
+  <div *ngFor="let result of selectedArchetype " class="m-3 rounded-1" >
 
-        <div class="center-cropped d-flex align-items-end position-relative"  style="background-image: url('{{result.cardHeader}}');">
+        <div class="center-cropped d-flex align-items-end position-relative rounded-1"  style="background-image: url('{{result.cardHeader}}');">
           <div *ngIf="!result.favorite" class="position-absolute top-0 end-0 icon-wrap p-1">
             <i class="bi-star" style="font-size: 1.5rem; color: white;" (click)="setFavorite(results.indexOf(result))"> </i>
 
@@ -25,7 +25,7 @@
             <i  class="bi-star-fill" style="font-size: 1.5rem; color: white;"  (click)="setFavorite(results.indexOf(result))"> </i>
 
           </div>
-        <div  class="position-relative bg-black text-white bg-opacity-50 w-100" (click)="openDialog(result.cardList,selectedArchetype.indexOf(result))">
+        <div  class="position-relative bg-black text-white bg-opacity-50 w-100 rounded-1" (click)="openDialog(result.cardList,selectedArchetype.indexOf(result))">
           <div class=" m-2 fs-4">
             {{result.archetypeName}} 
           </div>

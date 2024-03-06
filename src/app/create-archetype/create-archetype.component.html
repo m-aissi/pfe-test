@@ -1,11 +1,12 @@
-<div class="d-flex flex-wrap p-2">
+<div class="d-flex flex-wrap p-2 " data-bs-theme="dark">
     <!-- contient la zone de preview des cartes    -->
 
         <div style="width:27.8vw;height:82vh;" class="scroll m-3 d-flex align-content-start  flex-wrap " > 
             <div *ngFor="let result of cardList" class="position-relative ">
                 
-                <div style="width:13vh;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="cardSelected = cardList.indexOf(result) " >
+                <div style="width:6.6vw;height:19vh;" [ngStyle]="{background: 'url(' + result.cardImgSmall + ')', 'background-repeat': 'no-repeat', 'background-size': 'cover' }" (mouseenter)="changePreview(result)" (click)="lockPreview = !lockPreview">
                     <div class="position-absolute top-0 end-0 py-1" style="background:rgba(0, 0, 0, 0.5);vertical-align: middle;" >
+                        <i class="bi-plus-lg ms-1" style="font-size: 1.5rem; color: rgb(255, 255, 255);" (click)="addCard(result)"> </i>
                     </div>
                 </div> 
                 
@@ -15,81 +16,89 @@
             </div>
         </div>
         
-        <div style=" width: 27vw; max-height: 80vh; " class="bg-secondary p-2 m-2 text-center d-flex flex-column" >
-            <div class="d-flex flex-row ">
+        <div style=" width: 25vw; max-height: 80vh; " class=" rounded-1 m-2 text-center d-flex flex-column" >
+            <div class="d-flex ">
                 <!-- contient les infos de la carte selectionnée -->
-                <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 
-                    [ngStyle]="{'width': '17.7vh', 'height': '25.8vh'}">
-                    <img id='cardPreviewImage' [src]="cardList[0].cardImg" alt="Card Preview">
+                <div class="me-auto  my-auto" 
+                [ngStyle]="{ 'width': '37.7wh', 'height': '35.8vh' }">
+                    <img id='cardPreviewImage' [src]="cardPreview.cardImg" alt="Card Preview">
+                    
                 </div>    
-                <div style="width: 17vw; height: 25.8vh; overflow-y: auto;">
-                    <p> {{cardList[0].cardName}} </p>
-                    <p>[Spell Card][Quick Effect] Level X</p>
-                    <p>{{cardList[0].cardDescription}}</p>
-                    <p>ATK 500 /DEF 500</p>            
+                <div style="width: 15vw;" >
+                    <p class="fs-6 mt-1 scroll" style="height: 7vh;"> {{cardPreview.cardName}} </p>
+                    <p>
+                        <!-- if cardPreview.cardRace != undefined -->
+                        <span *ngIf=" cardPreview.cardType != undefined "> 
+                            [<img class="my-auto" src="https://images.ygoprodeck.com/images/cards/icons/race/{{cardPreview.cardRace}}.png" alt="..." style="width: 1em; height: 1em;">
+                            {{miseEnForme(cardPreview)}}  
+                        </span>
+                        <br>
+                        <span *ngIf=" cardPreview.cardAttribute != undefined ">
+                            <img class="my-auto" src="https://images.ygoprodeck.com/images/cards/{{cardPreview.cardAttribute}}.jpg" alt="..." style="width: 1em; height: 1em;">
+                            {{cardPreview.cardAttribute}} 
+                        </span>
+                        <span *ngIf=" cardPreview.cardLevel != '-1' "><img class="my-auto" src="https://ygoprodeck.com/wp-content/uploads/2017/01/level.png" alt="..." style="width: 1em; height: 1em;"> {{cardPreview.cardLevel}} </span>
+                        <span *ngIf=" cardPreview.cardScale != '-1' "> <i class="bi bi-suit-diamond-fill"></i> {{cardPreview.cardScale}}</span>
+                        <br>
+                        <span *ngIf=" cardPreview.cardAtk != '-1' "> 
+                            <svg class="my-auto" style="color: white" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"> <path d="m2.75 9.25 1.5 2.5 2 1.5m-4.5 0 1 1m1.5-2.5-1.5 1.5m3-1 8.5-8.5v-2h-2l-8.5 8.5" fill="white"></path> <path d="m10.25 12.25-2.25-2.25m2-2 2.25 2.25m1-1-1.5 2.5-2 1.5m4.5 0-1 1m-1.5-2.5 1.5 1.5m-7.25-5.25-4.25-4.25v-2h2l4.25 4.25" fill="white"></path> </svg>
+                            {{cardPreview.cardAtk}}
+                            <i class="bi bi-shield-fill my-auto"></i>
+                            {{cardPreview.cardDef}}
+                        </span>  
+                    </p>
+                    <div class="scroll" style="height: 30vh;">
+                        <p>{{cardPreview.cardDescription}}</p>
+                    </div>
 
                 </div>
             </div>
-            <div class="mt-auto">
-                <label for="search">Search:</label>
-                <input type="text" id="search" name="search">
-                <br>
+        
+            <button class="btn btn-sm mt-auto bg-dark rounded-1  mx-3 " (click)="toggleFilter = !toggleFilter"  >
+                <i class="bi bi-funnel-fill"></i>
+            </button>
 
-                <br>
-                <label for="rel">DEF:</label>
-                <input type="text" id="rel" name="rel">
-                
-                <label for="atk">ATK:</label>
-                <input type="number" id="atk" name="atk">
-                <br>
-                <label for="atk">Link:</label>
-                <input type="number" id="atk" name="atk">
-                
-                <label for="atk">Scale:</label>
-                <input type="number" id="atk" name="atk">
-                <br>
-                <label for="attribute">Attribute:</label>
-                <select id="attribute" name="attribute">
-                    <option value="0">Select Attribute</option>
-                    <!-- Add more attribute options here -->
-                </select>
-                <label for="type">Type:</label>
-                <select id="type" name="type">
-                    <option value="0">Select Type</option>
-                    <!-- Add more type options here -->
-                </select>
-                <br>
-                <label for="race">Race:</label>
-                <select id="race" name="race">
-                    <option value="0">Select Race</option>
-                    <!-- Add more race options here -->
-                </select>
-                <br>
+            <div [ngStyle]="toggleFilter ? {'visibility': 'visible'} : {'visibility': 'hidden'}"
+            class="float-bottom bg-dark bg-opacity-75 rounded-1 p-2 mx-3 mb-2">
+                <input [(ngModel)]="filterValue" (input)="filterCards()" type="text" id="search" placeholder="Search..." class="form-control form-control-sm my-1" name="search"   >
+                <div class="d-flex flex-row">
+                    <input [(ngModel)]="filterAtk" (input)="filterCards()" type="text" class="m-1 form-control form-control-sm" placeholder="ATK..."  id="atk" name="atk">
+                    <input [(ngModel)]="filterDef" (input)="filterCards()" type="text" class="m-1 form-control form-control-sm" placeholder="DEF..."  id="def" name="def">
+                    <input [(ngModel)]="filterLvl" (input)="filterCards()" type="text" class="m-1 form-control form-control-sm" placeholder="Level..."   id="lvl" name="lvl">
+                    <input [(ngModel)]="filterLink" (input)="filterCards()" type="text" class="m-1 form-control form-control-sm" placeholder="Link..."  id="link" name="link">                
+                    <input [(ngModel)]="filterScale" (input)="filterCards()" type="text" class="m-1 form-control form-control-sm" placeholder="Scale..."   id="scale" name="scale">
+                </div>
+                <div class="d-flex flex-row">
+                    <select [(ngModel)]="selectedAttribute" (change)="filterCards()" class="m-1 form-select form-select-sm" id="attribute" name="attribute">
+                        <option value="" selected>Attribute</option>
+                        <option>DARK</option><option>DIVINE</option><option>EARTH</option><option>FIRE</option><option>LIGHT</option><option>WATER</option><option>WIND</option> 
+                    </select>
+                    <select [(ngModel)]="selectedRace" (change)="filterCards()" class="m-1 form-select form-select-sm" id="type" name="type">
+                         <option value="" selected>Type</option>
+                        <option>Aqua</option><option>Beast</option><option>Beast-Warrior</option><option>Continuous</option><option>Counter</option><option>Creator-God</option><option>Cyberse</option><option>Dinosaur</option><option>Divine-Beast</option><option>Dragon</option><option>Equip</option><option>Fairy</option><option>Field</option><option>Fiend</option><option>Fish</option><option>Illusion</option><option>Insect</option><option>Machine</option><option>Normal</option><option>Plant</option><option>Psychic</option><option>Pyro</option><option>Quick-Play</option><option>Reptile</option><option>Ritual</option><option>Rock</option><option>Sea Serpent</option><option>Spellcaster</option><option>Thunder</option><option>Warrior</option><option>Winged Beast</option><option>Wyrm</option><option>Zombie</option>
+                    </select>
+                    <select [(ngModel)]="selectedType" (change)="filterCards()" class="m-1 form-select form-select-sm" id="sub-type" name="sub-type">
+                        <option value="" selected>Sub-type</option>
+                        <option>Effect Monster</option><option>Flip Effect Monster</option><option>Fusion Monster</option><option>Gemini Monster</option><option>Link Monster</option><option>Normal Monster</option><option>Normal Tuner Monster</option><option>Pendulum Effect Fusion Monster</option><option>Pendulum Effect Monster</option><option>Pendulum Effect Ritual Monster</option><option>Pendulum Flip Effect Monster</option><option>Pendulum Normal Monster</option><option>Pendulum Tuner Effect Monster</option><option>Ritual Effect Monster</option><option>Ritual Monster</option><option>Skill Card</option><option>Spell Card</option><option>Spirit Monster</option><option>Synchro Monster</option><option>Synchro Pendulum Effect Monster</option><option>Synchro Tuner Monster</option><option>Token</option><option>Toon Monster</option><option>Trap Card</option><option>Tuner Monster</option><option>Union Effect Monster</option><option>XYZ Monster</option><option>XYZ Pendulum Effect Monster</option>
+                    </select>
+                </div>  
  
             </div>
         </div>
-        <div style=" width: 20vw; max-height: 80vh; " class="bg-secondary p-2 m-2 text-center" >
-            <h3> Archetyps to be merged : </h3>
-            <ul style="max-height: 60vh;" class="list-group scroll ">
-                <li *ngFor="let result of cardList" class="list-group-item mb-1 bg_sombre">
+
+        <div style=" width: 20vw; max-height: 80vh; " class="bg-secondary bg-opacity-50 rounded-1 p-2 m-2 text-center" >
+            <h3> Archetyp's cardlist : </h3>
+            <ul style="height: 50vh; overflow-y: auto;" class="list-group">
+                <li *ngFor="let result of cardListFav" class="list-group-item mb-1 bg_sombre"  (mouseenter)="cardPreview = result " (click)="removeCard(result)">
                   <div class="d-flex justify-content-between">
-                    <div class="fs-5 my-auto">{{result.cardName}}</div>
+                    <div class="my-auto">{{result.cardName}}</div>
                     <!-- on ajout un boutton pour ajouter le result dans la liste des archetype selectionnés -->
                   </div>
                 </li>
             </ul>
             
-            <h2> Merged into ... </h2>
-            <input type="text" placeholder="New name..."  class="mb-1  input-group-text" style="max-width: 13vw;">
-            <button class="btn bg_sombre mt-2">Merge <i class="bi bi-union"></i></button>
+            <input [(ngModel)]="archetypTitle"  type="text" placeholder="Archetyp's name..."  class="my-1 mt-2 mx-auto  input-group-text" style="max-width: 13vw;">
+            <button (click)="create()" class="btn bg_sombre mt-2">Create <i class="bi bi-plus-lg"></i></button>
     
         </div>
-
-    <!-- contient les infos de la carte selectionnée -->
-    <!-- <div style="padding: 0; margin: 0; width: 50vh; text-align: center;">
-        <div id="cardPreviewZone" class="mx-auto mt-3 card-image" 
-            [ngStyle]="{'width': '20vw', 'height': '65vh'}">
-            <img id='cardPreviewImage' [src]="cardList[cardSelected].cardImg" alt="Card Preview">
-        </div>    
-    </div> -->
 </div>

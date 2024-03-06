@@ -43,6 +43,8 @@ export interface CardSearch {
   cardLevel: string;
   cardRace: string;
   cardAttribute: string;
+  cardScale : string;
+  cardLink : string;
 }
 
 @Component({
@@ -90,12 +92,9 @@ export class AppComponent {
     });
 
     dial.afterClosed().subscribe(nbOwned => {
-      console.log(`Dialog result: ${nbOwned}`);
-      console.log(this.results);
+
       this.results[i].ownedCardsCount = nbOwned;
-      console.log(data);
-      console.log(this.selectedArchetype.ownedCardsCount);
-      console.log("cc" + this.selectedArchetype);
+
       this.updateAllWantedPrice();
       this.updateTotals();
 
@@ -113,12 +112,9 @@ export class AppComponent {
     });
 
     dial.afterClosed().subscribe(nbOwned => {
-      console.log(`Dialog result: ${nbOwned}`);
-      console.log(this.results);
+
       this.results[i].ownedCardsCount = nbOwned;
-      console.log(data);
-      console.log(this.selectedArchetype.ownedCardsCount);
-      console.log("cc" + this.selectedArchetype);
+
       this.updateAllWantedPrice();
       this.updateTotals();
 
@@ -135,6 +131,17 @@ export class AppComponent {
       //on va parcourir les 10 premiers resultats de res.data.data
       for (let i = 0; i < res.data.data.length; i++) {
         //on va push les cartes dans cardList
+        if(res.data.data[i].atk == undefined)
+          res.data.data[i].atk = "-1";
+        if(res.data.data[i].def == undefined)
+          res.data.data[i].def = "-1";
+        if(res.data.data[i].level == undefined)
+          res.data.data[i].level = "-1";
+        if(res.data.data[i].scale == undefined)
+          res.data.data[i].scale = "-1";
+        if(res.data.data[i].linkval == undefined)
+          res.data.data[i].linkval = "-1";
+        
         cardList.push(
           { cardId: res.data.data[i].id, 
             cardName: res.data.data[i].name, 
@@ -149,7 +156,9 @@ export class AppComponent {
             cardDef: res.data.data[i].def, 
             cardLevel: res.data.data[i].level, 
             cardRace: res.data.data[i].race,
-            cardAttribute: res.data.data[i].attribute
+            cardAttribute: res.data.data[i].attribute,
+            cardScale: res.data.data[i].scale,
+            cardLink : res.data.data[i].linkval
           });
       }
       let dial = this.dialogRef.open(CreateArchetypeComponent, {
@@ -169,12 +178,9 @@ export class AppComponent {
 
 
     // dial.afterClosed().subscribe(nbOwned => {
-    //   console.log(`Dialog result: ${nbOwned}`);
-    //   console.log(this.results);
+
     //   this.results[i].ownedCardsCount = nbOwned;
-    //   console.log(data);
-    //   console.log(this.selectedArchetype.ownedCardsCount);
-    //   console.log("cc" + this.selectedArchetype);
+
     //   this.updateAllWantedPrice();
     //   this.updateTotals();
 
@@ -212,7 +218,6 @@ export class AppComponent {
     const apiUrl = 'https://db.ygoprodeck.com/api/v7/archetypes.php';
 
     axios.get(apiUrl, {}).then(resp => {
-      console.log(resp);
       const apiUrl2 = 'https://db.ygoprodeck.com/api/v7/cardinfo.php';
 
       for (const elem in resp.data) {
