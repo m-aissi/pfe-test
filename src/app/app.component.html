@@ -1,6 +1,11 @@
 <nav class="navbar fixed-top bg-dark bg-opacity-75" data-bs-theme="dark" style="z-index: 500 ;">
   <div class="container-fluid" style="color:white;">
     <input type="text" [(ngModel)]="filterValue" placeholder="Filtrer par nom d'archétype" (input)="filterCards()" class="input-group-text my-2 ms-3 fs-6 me-auto ">
+    <button type="button" class="btn bg-box mx-1" (click)="importProfileToClipboard()">Import <i class="bi bi-person-fill"></i></button>
+    <button type="button" class="btn bg-box mx-1" (click)="exportProfileToClipboard()">Export <i class="bi bi-person-fill"></i></button>
+    <!-- Example split danger button -->
+
+    
     <button type="button" class="btn btn-primary mx-1" (click)="exportToClipboard()">Export <i class="bi bi-arrow-bar-up fs-6 "></i></button>
     <button type="button" class="btn btn-secondary mx-1" (click)="openDialog3(selectedArchetype,'test')">Create <i class="bi bi-plus-lg fs-6 "></i></button>
     <button type="button" class="btn btn-secondary mx-1" (click)="openDialog2(selectedArchetype,'test')">Merge Archetypes <i class="bi bi-files fs-6 "></i></button>

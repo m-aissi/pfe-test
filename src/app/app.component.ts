@@ -4,7 +4,6 @@ import { MatDialog, MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angu
 import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview.component';
 import axios from 'axios';
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
-
 import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
 
 interface Archetype {
@@ -61,7 +60,8 @@ export class AppComponent {
   constructor(private dialogRef: MatDialog) { }
   total_owned: number = 0;
   total_wanted: number = 0;
-
+  createdName: any;
+  createdArchetyp: any;
 
 
   ngOnInit() {
@@ -97,7 +97,6 @@ export class AppComponent {
 
       this.updateAllWantedPrice();
       this.updateTotals();
-
     });
   }
 
@@ -111,18 +110,44 @@ export class AppComponent {
       }
     });
 
-    dial.afterClosed().subscribe(nbOwned => {
+    dial.afterClosed().subscribe(data => {
 
-      this.results[i].ownedCardsCount = nbOwned;
+      console.log(data);
+      let createdList: Card[] = [];
+      for (let i = 0; i < data.cardListFav.length; i++) {
+        for(let j = 0; j < data.cardListFav[i].cardList.length; j++){
+          createdList.push(data.cardListFav[i].cardList[j]);
+        }
+        this.results = this.results.filter((archetype: { archetypeName: string; }) => archetype.archetypeName !== data.cardListFav[i].archetypeName);
+      }
+      let total = 0;
+      let owned = 0;
+      let favorite = 0;
+      for (let j = 0; j < createdList.length; j++) {
+        total += parseFloat(String(createdList[j].cardPrice));
+        if (createdList[j].isOwned) owned++;
+        if (createdList[j].isFavorite) favorite++;
+      }
+      total = Math.round(total * 100) / 100;
 
-      this.updateAllWantedPrice();
-      this.updateTotals();
+      this.results.push({ cardList: createdList,
+         archetypeName: data.archetypTitle,
+          cardHeader: createdList[0].cardImg,
+           totalPrice: total,
+            favorite: false,
+             ownedCardsCount: owned, 
+             priceWantedTotal: favorite  });
+             this.ordreAlphabetique();
+
+        this.filterCards();
+        this.updateAllWantedPrice();
+        this.updateTotals();
 
     });
   }
   openDialog3(data: any, i: any) {
 
-
+    let dial : any;
     let cardList: any = [];
 
     const apiUrl2 = 'https://db.ygoprodeck.com/api/v7/cardinfo.php';
@@ -131,16 +156,11 @@ export class AppComponent {
       //on va parcourir les 10 premiers resultats de res.data.data
       for (let i = 0; i < res.data.data.length; i++) {
         //on va push les cartes dans cardList
-        if(res.data.data[i].atk == undefined)
-          res.data.data[i].atk = "-1";
-        if(res.data.data[i].def == undefined)
-          res.data.data[i].def = "-1";
-        if(res.data.data[i].level == undefined)
-          res.data.data[i].level = "-1";
-        if(res.data.data[i].scale == undefined)
-          res.data.data[i].scale = "-1";
-        if(res.data.data[i].linkval == undefined)
-          res.data.data[i].linkval = "-1";
+        if(res.data.data[i].atk == undefined) res.data.data[i].atk = "-1";
+        if(res.data.data[i].def == undefined) res.data.data[i].def = "-1";
+        if(res.data.data[i].level == undefined) res.data.data[i].level = "-1";
+        if(res.data.data[i].scale == undefined) res.data.data[i].scale = "-1";
+        if(res.data.data[i].linkval == undefined) res.data.data[i].linkval = "-1";
         
         cardList.push(
           { cardId: res.data.data[i].id, 
@@ -161,30 +181,55 @@ export class AppComponent {
             cardLink : res.data.data[i].linkval
           });
       }
-      let dial = this.dialogRef.open(CreateArchetypeComponent, {
+      dial = this.dialogRef.open(CreateArchetypeComponent, {
         width: '100%',
         height: '90%',
         panelClass: 'dialog-panel',
         data: {
           dataKey: cardList
         }
+        
       });
-      //on va afficher cardList dans la console
+      dial.afterClosed().subscribe((data: any) => {
+        console.log(data);
+        console.log(data.archetypTitle);
+        console.log(data.cardListFav);
+        let createdList: Card[] = [];
+        
+        for (let i = 0; i < data.cardListFav.length; i++) {
+          createdList.push({ 
+            cardId: data.cardListFav[i].cardId, 
+            cardName: data.cardListFav[i].cardName,
+            cardImg: data.cardListFav[i].cardImg,
+            cardPrice: data.cardListFav[i].cardPrice,
+            cardImgSmall: data.cardListFav[i].cardImgSmall,
+            isOwned: false,
+            isFavorite: false
+          });
+        }
+        let total = 0;
+        for (let j = 0; j < createdList.length; j++) {
+          total += parseFloat(String(createdList[j].cardPrice));
+        }
+        total = Math.round(total * 100) / 100;
+
+        this.results.push({ cardList: createdList,
+           archetypeName: data.archetypTitle,
+            cardHeader: data.cardListFav[0].cardImg,
+             totalPrice: total,
+              favorite: true,
+               ownedCardsCount: 0, 
+               priceWantedTotal: 0 });
+               this.ordreAlphabetique();
+
+               this.filterCards();
+               this.updateAllWantedPrice();
+                this.updateTotals();
+
+      });
     });
     //on va boucler sur cardlist 
     //on affiche cardList dans la console
-
-
-
-
-    // dial.afterClosed().subscribe(nbOwned => {
-
-    //   this.results[i].ownedCardsCount = nbOwned;
-
-    //   this.updateAllWantedPrice();
-    //   this.updateTotals();
-
-    // });
 
 
   }
@@ -255,14 +300,16 @@ export class AppComponent {
 
   }
 
+  ordreAlphabetique() {
+    this.results.sort((a: { archetypeName: string; }, b: { archetypeName: any; }) => a.archetypeName.localeCompare(b.archetypeName));
+  }
   filterCards() {
-    // Filtrer les cartes en fonction de la valeur saisie par l'utilisateur
+
     this.selectedArchetype = this.results.filter(archetype => archetype.archetypeName.toLowerCase().includes(this.filterValue.toLowerCase()));
     const filteredFavorites = this.results.filter(archetype => archetype.favorite);
     const filteredNonFavorites = this.results.filter(archetype => !archetype.favorite);
     this.results = filteredFavorites.concat(filteredNonFavorites);
     this.selectedArchetype = this.results.filter(archetype => archetype.archetypeName.toLowerCase().includes(this.filterValue.toLowerCase()));
-
   }
 
   setFavorite(i: any) {
@@ -302,4 +349,90 @@ export class AppComponent {
 
   }
 
+
+  exportProfileToClipboard(){
+    let archetypExport = [];
+    for ( let i = 0; i < this.results.length; i++){
+      let cardListExport = [];
+      for (let j = 0; j < this.results[i].cardList.length; j++){
+        cardListExport.push({
+          cardId: this.results[i].cardList[j].cardId,
+          cardName: this.results[i].cardList[j].cardName,
+          cardImg: this.results[i].cardList[j].cardImg,
+          cardPrice: this.results[i].cardList[j].cardPrice,
+          cardImgSmall: this.results[i].cardList[j].cardImgSmall,
+          isOwned: this.results[i].cardList[j].isOwned,
+          isFavorite: this.results[i].cardList[j].isFavorite
+        });
+      }
+      archetypExport.push({
+        cardList: cardListExport,
+        archetypeName: this.results[i].archetypeName,
+        cardHeader: this.results[i].cardHeader,
+        totalPrice: this.results[i].totalPrice,
+        favorite: this.results[i].favorite,
+        ownedCardsCount: this.results[i].ownedCardsCount,
+        priceWantedTotal: this.results[i].priceWantedTotal
+      });
+    }
+
+
+
+    //on fait telecharger le fichier
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(archetypExport)));
+    element.setAttribute('download', "YGOToolsProfile.json");
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+
+
+  }
+  importProfileToClipboard()
+  {
+    //on recupere le fichier json
+    const element = document.createElement('input');
+    element.setAttribute('type', 'file');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    element.onchange = (event: any) => {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const archetypImport = JSON.parse(e.target.result);
+        this.results = [];
+        for (let i = 0; i < archetypImport.length; i++){
+          let cardListImport: Card[] = [];
+          for (let j = 0; j < archetypImport[i].cardList.length; j++){
+            cardListImport.push({
+              cardId: archetypImport[i].cardList[j].cardId,
+              cardName: archetypImport[i].cardList[j].cardName,
+              cardImg: archetypImport[i].cardList[j].cardImg,
+              cardPrice: archetypImport[i].cardList[j].cardPrice,
+              cardImgSmall: archetypImport[i].cardList[j].cardImgSmall,
+              isOwned: archetypImport[i].cardList[j].isOwned,
+              isFavorite: archetypImport[i].cardList[j].isFavorite
+            });
+          }
+          this.results.push({
+            cardList: cardListImport,
+            archetypeName: archetypImport[i].archetypeName,
+            cardHeader: archetypImport[i].cardHeader,
+            totalPrice: archetypImport[i].totalPrice,
+            favorite: archetypImport[i].favorite,
+            ownedCardsCount: archetypImport[i].ownedCardsCount,
+            priceWantedTotal: archetypImport[i].priceWantedTotal
+          });
+        }
+        this.ordreAlphabetique();
+        this.filterCards();
+        this.updateAllWantedPrice();
+        this.updateTotals();
+      };
+      reader.readAsText(file);
+    };
+
+  }
 } 

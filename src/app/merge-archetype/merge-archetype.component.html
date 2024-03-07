@@ -30,8 +30,8 @@
       </div>
       <div style=" width: 15vw; max-height: 30vh; " class="bg_secondary_50 rounded-1 p-2 m-2 text-center" >
         <h2> Merged into ... </h2>
-        <input type="text" placeholder="New name..."  class="mb-1  input-group-text" style="max-width: 13vw;">
-        <button class="btn bg_sombre mt-2">Merge <i class="bi bi-union"></i></button>
+        <input [(ngModel)]="filterValue" type="text" placeholder="New name..."  class="mb-1  input-group-text" style="max-width: 13vw;">
+        <button class="btn bg_sombre mt-2" (click)="merge()">Merge <i class="bi bi-union"></i></button>
 
       </div>
 

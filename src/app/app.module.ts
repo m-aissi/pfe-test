@@ -12,7 +12,6 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { DragDropModule } from "@angular/cdk/drag-drop";
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
-
 @NgModule({
   declarations: [
     AppComponent,
@@ -28,7 +27,7 @@ import { CreateArchetypeComponent } from './create-archetype/create-archetype.co
     BrowserAnimationsModule,
     MatDialogModule,
     ScrollingModule,
-    DragDropModule
+    DragDropModule,
     ],
   providers: [],
   bootstrap: [AppComponent]

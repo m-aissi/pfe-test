@@ -10,9 +10,11 @@ import { MatDialogRef } from '@angular/material/dialog';
 })
 export class MergeArchetypeComponent {
   private isDialogClosed = false; 
-  nbOwned : any;
+
   archetypList : any = [];  
+
   filterValue: string = '';
+
   archetypeSelected : any = [];
 
 
@@ -23,16 +25,12 @@ export class MergeArchetypeComponent {
     @Inject(MAT_DIALOG_DATA) public data: any
  ) { }
  closeDialog() {
-  this.isDialogClosed = true; // Ajoutez cette ligne
-  this.dialogRef.close(this.nbOwned);
+
 }
 ngOnDestroy() {
-  if (!this.isDialogClosed) { // Ajoutez cette ligne
-    this.dialogRef.close(this.nbOwned);
-  }
+
 }
 ngOnInit() {
-  console.log(this.data)
   this.archetypList = this.data.dataKey;
 
   }
@@ -41,7 +39,6 @@ ngOnInit() {
     // on va filtrer les cartes en fonction de la valeur saisie par l'utilisateur dans l'input
     this.archetypList = this.data.dataKey;
     this.archetypList = this.archetypList.filter((archetype: { archetypeName: string; }) => archetype.archetypeName.toLowerCase().includes(this.filterValue.toLowerCase()));
-    console.log(this.archetypList)
     
 
 
@@ -55,7 +52,6 @@ ngOnInit() {
   }
   addArchetype(archetypeSelctionee : any){
     //on va ajouter push archetypeSelectionee dans archetypeSelected et la retirer de archetypList
-    console.log(archetypeSelctionee)
     //output
     //Object { cardList: (13) […], archetypeName: "-Eyes Dragon", cardHeader: "https://images.ygoprodeck.com/images/cards/70335319.jpg", totalPrice: 15.86, favorite: false, ownedCardsCount: 0, priceWantedTotal: 0 }
 
@@ -85,4 +81,13 @@ ngOnInit() {
     ); 
   }
 
+  merge(){
+    if(this.filterValue != '' && this.archetypeSelected.length > 0){
+      let data = {
+        archetypTitle : this.filterValue,
+        cardListFav : this.archetypeSelected
+      };
+      this.dialogRef.close(data);
+    }
+  }
 }

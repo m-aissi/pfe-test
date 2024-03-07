@@ -57,9 +57,7 @@ export class CreateArchetypeComponent {
   }
 
   ngOnDestroy() {
-    if (!this.isDialogClosed) { // Ajoutez cette ligne
-      this.dialogRef.close(this.nbOwned);
-    }
+
   }
 
   ngOnInit() {} 
@@ -86,7 +84,6 @@ export class CreateArchetypeComponent {
 
     return text2+"/"+text;
   }
-
 
   changePreview(card : any){
     if(!this.lockPreview) this.cardPreview = card;
@@ -152,8 +149,13 @@ export class CreateArchetypeComponent {
   }
 
   create(){
-    if(this.archetypTitle != 'Archetyp name...' && this.archetypTitle != ''){
+    if(this.archetypTitle != '' && this.cardListFav.length > 0){
       console.log(this.archetypTitle);
+      let data = {
+        archetypTitle: this.archetypTitle,
+        cardListFav: this.cardListFav
+      };
+      this.dialogRef.close(data);
     }
   }
 
