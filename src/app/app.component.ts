@@ -5,6 +5,7 @@ import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview
 import axios from 'axios';
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
+import { BinderComponent } from './binder/binder.component';
 
 interface Archetype {
   cardList: Card[];
@@ -234,6 +235,17 @@ export class AppComponent {
 
   }
 
+
+  openBinders() {
+    // disableClose : Échap sert d'abord à désélectionner la carte, le composant gère lui-même la fermeture
+    this.dialogRef.open(BinderComponent, {
+      width: '98vw',
+      maxWidth: '98vw',
+      height: '94vh',
+      panelClass: 'dialog-panel',
+      disableClose: true
+    });
+  }
 
   exportToClipboard() {
     let text = "";
