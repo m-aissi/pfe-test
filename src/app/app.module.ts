@@ -13,13 +13,15 @@ import { DragDropModule } from "@angular/cdk/drag-drop";
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
 import { ScytheReviewComponent } from './scythe-review/scythe-review.component';
+import { BinderComponent } from './binder/binder.component';
 @NgModule({
   declarations: [
     AppComponent,
     ArchetypePreviewComponent,
     MergeArchetypeComponent,
     CreateArchetypeComponent,
-    ScytheReviewComponent
+    ScytheReviewComponent,
+    BinderComponent
   ],
   imports: [
     BrowserModule,

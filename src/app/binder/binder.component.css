@@ -1,0 +1,102 @@
+:host {
+    --slot-w: min(16vh, 9vw);
+    display: block;
+    height: 100%;
+}
+
+.search-panel {
+    width: 23vw;
+    min-width: 220px;
+}
+
+.search-results {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    padding: 3px;
+}
+
+.search-card, .slot-card {
+    position: relative;
+    cursor: pointer;
+}
+
+.search-card img, .slot-card img {
+    display: block;
+    width: 100%;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+.search-card.selected {
+    outline: 3px solid #0d6efd;
+    border-radius: 3px;
+}
+
+.slot-btn {
+    position: absolute;
+    top: 0;
+    display: none;
+    border: 0;
+    padding: 0 4px;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.search-card:hover .slot-btn, .slot-card:hover .slot-btn {
+    display: block;
+}
+
+.spread {
+    display: flex;
+    gap: 1.2vw;
+}
+
+.binder-page {
+    display: grid;
+    grid-template-columns: repeat(3, var(--slot-w));
+    grid-template-rows: repeat(3, calc(var(--slot-w) * 86 / 59));
+    gap: 0.5vw;
+    padding: 0.6vw;
+    background: #2a1c1c;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.binder-page.cover {
+    background: #3a2828;
+}
+
+.slot {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+}
+
+.slot.can-place:hover, .slot.drag-over {
+    outline: 2px dashed #0d6efd;
+}
+
+.slot-card {
+    height: 100%;
+    cursor: grab;
+}
+
+.slot-card img {
+    height: 100%;
+    object-fit: cover;
+}
+
+.owned {
+    position: absolute;
+    right: 4px;
+    bottom: 2px;
+    color: #3ddc84;
+    text-shadow: 0 0 3px black;
+}
