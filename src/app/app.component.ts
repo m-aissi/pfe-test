@@ -5,6 +5,7 @@ import { ArchetypePreviewComponent } from './archetype-preview/archetype-preview
 import axios from 'axios';
 import { MergeArchetypeComponent } from './merge-archetype/merge-archetype.component';
 import { CreateArchetypeComponent } from './create-archetype/create-archetype.component';
+import { ScytheReviewComponent, SCYTHE_ARCHETYPE_NAME, loadScytheState, saveScytheState } from './scythe-review/scythe-review.component';
 
 interface Archetype {
   cardList: Card[];
@@ -66,6 +67,59 @@ export class AppComponent {
 
   ngOnInit() {
     this.initArchetypeList();
+    this.syncScytheArchetype();
+    this.updateAllWantedPrice();
+    this.updateTotals();
+  }
+
+  openScytheReview() {
+    let dial = this.dialogRef.open(ScytheReviewComponent, {
+      width: '100%',
+      height: '90%',
+      panelClass: 'dialog-panel'
+    });
+
+    dial.afterClosed().subscribe(() => this.syncScytheArchetype());
+  }
+
+  // reconstruit l'archétype "Faux" depuis le tri sauvegardé, en gardant les cartes possédées/favorites
+  syncScytheArchetype() {
+    const state = loadScytheState();
+    const existing = this.results.find(archetype => archetype.archetypeName === SCYTHE_ARCHETYPE_NAME);
+    if (state.found.length == 0) {
+      if (existing) this.results = this.results.filter(archetype => archetype !== existing);
+      this.filterCards();
+      return;
+    }
+
+    const previous = new Map((existing ? existing.cardList : []).map(card => [card.cardImg, card]));
+    const cardList: Card[] = state.found.map(found => previous.get(found.cardImg) ?? {
+      cardId: found.cardId,
+      cardName: found.cardName,
+      cardImg: found.cardImg,
+      cardPrice: found.cardPrice,
+      cardImgSmall: found.cardImgSmall,
+      isOwned: false,
+      isFavorite: false
+    });
+    cardList.sort((a, b) => a.cardName.localeCompare(b.cardName));
+
+    if (existing) {
+      existing.cardList = cardList;
+      existing.cardHeader = cardList[0].cardImg;
+      existing.ownedCardsCount = cardList.filter(card => card.isOwned).length;
+    } else {
+      this.results.push({ cardList: cardList,
+        archetypeName: SCYTHE_ARCHETYPE_NAME,
+        cardHeader: cardList[0].cardImg,
+        totalPrice: 0,
+        favorite: true,
+        ownedCardsCount: 0,
+        priceWantedTotal: 0 });
+      this.ordreAlphabetique();
+    }
+
+    this.filterCards();
     this.updateAllWantedPrice();
     this.updateTotals();
   }
@@ -380,7 +434,7 @@ export class AppComponent {
 
     //on fait telecharger le fichier
     const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(archetypExport)));
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify({ archetypes: archetypExport, scytheReview: loadScytheState() })));
     element.setAttribute('download', "YGOToolsProfile.json");
     element.style.display = 'none';
     document.body.appendChild(element);
@@ -401,7 +455,10 @@ export class AppComponent {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        const archetypImport = JSON.parse(e.target.result);
+        const parsed = JSON.parse(e.target.result);
+        // les anciens profils sont un simple tableau d'archétypes
+        const archetypImport = Array.isArray(parsed) ? parsed : parsed.archetypes;
+        if (parsed.scytheReview) saveScytheState(parsed.scytheReview);
         this.results = [];
         for (let i = 0; i < archetypImport.length; i++){
           let cardListImport: Card[] = [];
@@ -427,9 +484,7 @@ export class AppComponent {
           });
         }
         this.ordreAlphabetique();
-        this.filterCards();
-        this.updateAllWantedPrice();
-        this.updateTotals();
+        this.syncScytheArchetype();
       };
       reader.readAsText(file);
     };
