@@ -8,9 +8,11 @@ export interface UserCollection {
   owned: Set<number>;
   wanted: Set<number>;
   favorites: Set<string>;
+  // clé d'archétype -> illustration de couverture choisie
+  covers: Map<string, number>;
 }
 
-export const EMPTY_COLLECTION: UserCollection = { owned: new Set(), wanted: new Set(), favorites: new Set() };
+export const EMPTY_COLLECTION: UserCollection = { owned: new Set(), wanted: new Set(), favorites: new Set(), covers: new Map() };
 
 @Injectable()
 export class CollectionService {
@@ -26,6 +28,7 @@ export class CollectionService {
       owned: new Set(this.index.resolveCardIds(doc?.owned ?? [])),
       wanted: new Set(this.index.resolveCardIds(doc?.wanted ?? [])),
       favorites: new Set(doc?.favorites ?? []),
+      covers: new Map((doc?.covers ?? []).filter(cover => this.index.artworkToCard.has(cover.imageId)).map(cover => [cover.key, cover.imageId])),
     };
   }
 
@@ -41,13 +44,25 @@ export class CollectionService {
     await this.update(userId, add, pull);
   }
 
-  async setFavorite(userId: string, key: string, favorite: boolean) {
+  private checkKey(key: string) {
     const valid =
       key == SCYTHE_KEY ||
       (key.startsWith('a:') && this.index.archetypeByName.has(key.slice(2))) ||
       (key.startsWith('c:') && Types.ObjectId.isValid(key.slice(2)));
     if (!valid) throw new BadRequestException('Archétype inconnu');
+  }
+
+  async setFavorite(userId: string, key: string, favorite: boolean) {
+    this.checkKey(key);
     await this.update(userId, favorite ? { favorites: key } : {}, favorite ? {} : { favorites: key });
+  }
+
+  // imageId null : revient à la couverture par défaut
+  async setCover(userId: string, key: string, imageId: number | null) {
+    this.checkKey(key);
+    if (imageId !== null && !this.index.artworkToCard.has(imageId)) throw new BadRequestException('Illustration inconnue');
+    await this.model.updateOne({ userId }, { $pull: { covers: { key } } }, { upsert: true });
+    if (imageId !== null) await this.model.updateOne({ userId }, { $push: { covers: { key, imageId } } });
   }
 
   async removeFavorites(userId: string, keys: string[]) {

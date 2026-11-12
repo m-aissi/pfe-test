@@ -25,11 +25,11 @@
         <span title="Prix des cartes voulues pas encore possédées">{{ formatPrice(s.wantedPrice) }} <i class="bi bi-heart-fill text-wanted"></i></span>
         @if (auth.user()) {
           <span class="flex gap-2 sm:ml-auto">
-            <button type="button" class="btn btn-sm btn-box" (click)="wantAll()"><i class="bi bi-heart-fill text-wanted"></i> Tout vouloir</button>
             @if (s.wanted) {
-              <button type="button" class="btn btn-sm btn-box" (click)="unwantAll()"><i class="bi bi-heart"></i> Plus rien vouloir</button>
+              <button type="button" class="btn btn-sm btn-box" (click)="unwantAll()"><i class="bi bi-heart"></i> Unwant All</button>
             }
-            <button type="button" class="btn btn-sm btn-primary" (click)="copyList()"><i class="bi bi-clipboard"></i> Copier les voulues</button>
+            <button type="button" class="btn btn-sm btn-box" (click)="wantAll()"><i class="bi bi-heart-fill text-wanted"></i> Want All</button>
+            <button type="button" class="btn btn-sm btn-primary" (click)="copyList()"><i class="bi bi-clipboard"></i> Copier les Wanted</button>
           </span>
         } @else {
           <a [routerLink]="'/connexion'" class="text-primary underline sm:ml-auto">Connecte-toi pour cocher tes cartes</a>
@@ -91,8 +91,8 @@
           @if (card.atk !== undefined) {
             <p class="text-sm">ATK {{ card.atk }}@if (card.def !== undefined) { / DEF {{ card.def }}}</p>
           }
-          <p class="mt-1 text-sm">Cardmarket : {{ formatPrice(card.price) }}</p>
         </div>
+        <app-cardmarket-link [card]="card" />
         <ng-container *ngTemplateOutlet="flags; context: { $implicit: card }" />
         @if (selectedDescription(); as text) {
           <p class="text-sm leading-relaxed whitespace-pre-line text-white/85">{{ text }}</p>
@@ -114,6 +114,13 @@
         <button type="button" class="btn flex-1" [class]="collection.wanted().has(card.id) ? 'bg-rose-700' : 'btn-box'" (click)="collection.toggleWanted(card.id)">
           <i class="bi bi-heart-fill"></i> {{ collection.wanted().has(card.id) ? 'Voulue' : 'Je la veux' }}
         </button>
+        @if (auth.user()) {
+          @let isCover = detail()?.cover == card.imageId;
+          <button type="button" class="btn px-3" [class]="isCover ? 'bg-amber-600' : 'btn-box'" (click)="setCover(card)"
+            [title]="isCover ? 'Couverture de l\'archétype (cliquer pour revenir à celle par défaut)' : 'Utiliser comme couverture de l\'archétype'">
+            <i class="bi" [class]="isCover ? 'bi-image-fill' : 'bi-image'"></i>
+          </button>
+        }
       </div>
     </ng-template>
   </div>

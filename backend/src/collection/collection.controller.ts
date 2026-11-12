@@ -32,6 +32,15 @@ class FavoriteDto {
   favorite: boolean;
 }
 
+class CoverDto {
+  @IsString() @MaxLength(120)
+  key: string;
+
+  // null : couverture par défaut
+  @IsOptional() @IsInt() @Min(0)
+  imageId: number | null = null;
+}
+
 class CustomArchetypeDto {
   @IsString() @MinLength(1) @MaxLength(60)
   name: string;
@@ -118,6 +127,12 @@ export class CollectionController {
   @Put('collection/favorites')
   async setFavorite(@UserId() userId: string, @Body() dto: FavoriteDto) {
     await this.collection.setFavorite(userId, dto.key, dto.favorite);
+    return { ok: true };
+  }
+
+  @Put('collection/cover')
+  async setCover(@UserId() userId: string, @Body() dto: CoverDto) {
+    await this.collection.setCover(userId, dto.key, dto.imageId ?? null);
     return { ok: true };
   }
 

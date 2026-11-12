@@ -11,8 +11,8 @@
 
   <!-- comme l'ancienne version : toutes les cartes à gauche, la carte survolée en grand au milieu, la sélection à droite -->
   <div class="flex min-h-0 flex-1 gap-4">
-    <section class="min-h-0 flex-1 md:block" [class.hidden]="tab() != 'search'">
-      <app-card-search #search [browseAll]="true" tileSize="7.5rem" quickLabel="Voir en grand" quickIcon="bi-arrows-angle-expand" [markedCardIds]="cardIds()"
+    <section class="min-h-0 min-w-0 flex-1 md:block" [class.hidden]="tab() != 'search'">
+      <app-card-search #search [browseAll]="true" tileSize="7.5rem" quickLabel="Voir en grand" quickIcon="bi-zoom-in" [markedCardIds]="cardIds()"
         (pick)="toggle($event.card)" (quick)="zoomed.set($event.card)" (hover)="preview.set($event.card)" />
     </section>
 

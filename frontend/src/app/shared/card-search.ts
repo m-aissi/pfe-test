@@ -18,12 +18,13 @@ export interface SearchDragStart {
 export type SearchSort = 'name' | 'new' | 'random' | 'price' | 'price-desc';
 
 const PAGE_SIZE = 30;
-const SORTS: { value: SearchSort; label: string; icon: string }[] = [
+// secondary : affiché seulement une fois le chevron déplié (sauf s'il est actif)
+const SORTS: { value: SearchSort; label: string; icon: string; secondary?: boolean }[] = [
   { value: 'name', label: 'A → Z', icon: 'bi-sort-alpha-down' },
   { value: 'new', label: 'Nouveautés', icon: 'bi-stars' },
-  { value: 'random', label: 'Au hasard', icon: 'bi-shuffle' },
-  { value: 'price', label: 'Moins chères', icon: 'bi-currency-euro' },
-  { value: 'price-desc', label: 'Plus chères', icon: 'bi-gem' },
+  { value: 'random', label: 'Hasard', icon: 'bi-shuffle' },
+  { value: 'price', label: 'Moins chères', icon: 'bi-currency-euro', secondary: true },
+  { value: 'price-desc', label: 'Plus chères', icon: 'bi-gem', secondary: true },
 ];
 const randomSeed = () => 1000 + Math.floor(Math.random() * 1_999_000);
 let facetsCache: Promise<Facets> | null = null;

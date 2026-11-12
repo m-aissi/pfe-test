@@ -18,6 +18,10 @@ export class Collection {
   // archétypes mis en favori, par clé (voir archetypeKey)
   @Prop({ type: [String], default: [] })
   favorites: string[];
+
+  // couvertures choisies par l'utilisateur ; une liste plutôt qu'un objet car les noms d'archétype peuvent contenir des points
+  @Prop({ type: [{ _id: false, key: String, imageId: Number }], default: [] })
+  covers: { key: string; imageId: number }[];
 }
 
 export const CollectionSchema = SchemaFactory.createForClass(Collection);

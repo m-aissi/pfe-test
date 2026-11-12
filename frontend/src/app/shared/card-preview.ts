@@ -1,11 +1,13 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { Card } from '../core/api';
 import { Prefs } from '../core/prefs';
+import { CardmarketLink } from './cardmarket-link';
 import { formatPrice, imgUrl, typeLine } from '../core/util';
 
 // grande image d'une carte avec ses caractéristiques et son texte (panneau central de l'éditeur d'archétype)
 @Component({
   selector: 'app-card-preview',
+  imports: [CardmarketLink],
   template: `
     @if (card(); as c) {
       <div class="flex h-full min-h-0 flex-col gap-3 overflow-y-auto">
@@ -27,8 +29,8 @@ import { formatPrice, imgUrl, typeLine } from '../core/util';
           @if (c.atk !== undefined) {
             <p class="text-sm">ATK {{ c.atk }}@if (c.def !== undefined) { / DEF {{ c.def }}}</p>
           }
-          <p class="text-sm text-white/70">Cardmarket : {{ formatPrice(c.price) }}</p>
         </div>
+        <app-cardmarket-link [card]="c" />
         @if (description(); as text) {
           <p class="text-sm leading-relaxed whitespace-pre-line text-white/85">{{ text }}</p>
         }

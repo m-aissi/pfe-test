@@ -7,7 +7,6 @@ import { Prefs } from '../../core/prefs';
 import { Toasts } from '../../core/toast';
 import { copyText, formatPrice, imgUrl, normalize } from '../../core/util';
 
-const PAGE_SIZE = 60;
 
 @Component({
   selector: 'app-home',
@@ -25,15 +24,12 @@ export class Home {
 
   readonly data = signal<ArchetypeList | null>(null);
   readonly filter = signal('');
-  // les 667 archétypes ne sont pas affichés d'un coup : on en montre plus en descendant
-  readonly shown = signal(PAGE_SIZE);
 
   readonly filtered = computed(() => {
     const query = normalize(this.filter());
     const archetypes = this.data()?.archetypes ?? [];
     return query ? archetypes.filter((archetype) => normalize(archetype.name).includes(query)) : archetypes;
   });
-  readonly visible = computed(() => this.filtered().slice(0, this.shown()));
 
   constructor() {
     this.load();
@@ -47,12 +43,12 @@ export class Home {
     }
   }
 
-  onFilter() {
-    this.shown.set(PAGE_SIZE);
-  }
-
-  showMore() {
-    this.shown.update((shown) => shown + PAGE_SIZE);
+  // pas d'illustration recadrée chez ygoprodeck : on prend la carte entière (cadrée sur l'image par object-position)
+  coverFallback(event: Event, imageId: number) {
+    const img = event.target as HTMLImageElement;
+    if (img.dataset['fallback']) return;
+    img.dataset['fallback'] = '1';
+    img.src = imgUrl('cards', imageId);
   }
 
   open(archetype: ArchetypeEntry) {

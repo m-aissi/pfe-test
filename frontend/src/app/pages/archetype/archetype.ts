@@ -8,12 +8,13 @@ import { Prefs } from '../../core/prefs';
 import { Toasts } from '../../core/toast';
 import { copyText, formatPrice, imgUrl, roundPrice, typeLine } from '../../core/util';
 import { CardZoom } from '../../shared/card-zoom';
+import { CardmarketLink } from '../../shared/cardmarket-link';
 
 type Filter = 'all' | 'missing' | 'owned' | 'wanted';
 
 @Component({
   selector: 'app-archetype',
-  imports: [RouterLink, NgTemplateOutlet, CardZoom],
+  imports: [RouterLink, NgTemplateOutlet, CardZoom, CardmarketLink],
   templateUrl: './archetype.html',
 })
 export class Archetype {
@@ -136,6 +137,17 @@ export class Archetype {
     const wanted = this.collection.wanted();
     const ids = this.visible().filter((card) => wanted.has(card.id)).map((card) => card.id);
     if (ids.length && (await this.collection.setWanted(ids, false))) this.toasts.success(`${ids.length} cartes retirées des voulues`);
+  }
+
+  // illustration de la tuile sur l'accueil ; recliquer sur la couverture actuelle revient à celle par défaut
+  async setCover(card: ArchetypeCard) {
+    const detail = this.detail()!;
+    const reset = detail.cover == card.imageId;
+    await this.api.put('/me/collection/cover', { key: detail.key, imageId: reset ? null : card.imageId });
+    // recharge pour connaître la couverture par défaut après une remise à zéro
+    const fresh = await this.api.get<ArchetypeDetail>('/archetypes/detail', { key: detail.key }, { silent: true });
+    this.detail.update((current) => current && { ...current, cover: fresh.cover });
+    this.toasts.success(reset ? 'Couverture par défaut rétablie' : 'Nouvelle couverture');
   }
 
   async copyList() {

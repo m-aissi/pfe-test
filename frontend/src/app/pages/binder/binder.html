@@ -32,9 +32,9 @@
         <button type="button" class="min-w-0 truncate text-lg font-medium hover:underline" (click)="rename()" title="Renommer">{{ b.name }}</button>
         <span class="shrink-0 text-xs text-white/55" [class.text-red-300]="saveState() == 'error'">
           @switch (saveState()) {
-            @case ('saved') { <i class="bi bi-cloud-check" title="Enregistré"></i><span class="hidden sm:inline"> Enregistré</span> }
+            @case ('saved') { <i class="bi bi-cloud-check" title="Enregistré automatiquement"></i><span class="max-[22rem]:hidden"> Enregistré</span> }
             @case ('error') { Échec <button type="button" class="underline" (click)="retrySave()">réessayer</button> }
-            @default { <i class="bi bi-cloud-arrow-up" title="Enregistrement..."></i><span class="hidden sm:inline"> Enregistrement...</span> }
+            @default { <i class="bi bi-cloud-arrow-up" title="Enregistrement..."></i><span class="max-[22rem]:hidden"> Enregistrement...</span> }
           }
         </span>
 
@@ -43,11 +43,9 @@
           <i class="bi bi-cart sm:hidden"></i><span class="hidden sm:inline">à acheter </span>{{ formatPrice(toBuyPrice()) }}
         </span>
         <button type="button" class="btn btn-sm btn-primary shrink-0" (click)="copyWantlist()" title="Copier les cartes à acheter (format wantlist Cardmarket)"><i class="bi bi-clipboard"></i><span class="hidden sm:inline">Wantlist</span></button>
-        <button type="button" class="btn btn-sm shrink-0 md:hidden" [class]="showSettings() ? 'bg-white/25' : 'btn-box'" (click)="showSettings.set(!showSettings())" title="Réglages du classeur"><i class="bi bi-gear-fill"></i></button>
       </div>
 
-      <!-- réglages : toujours visibles sur grand écran, derrière la roue dentée sur téléphone -->
-      <div class="flex-wrap items-center gap-1.5 text-sm md:flex" [class.flex]="showSettings()" [class.hidden]="!showSettings()">
+      <div class="flex flex-wrap items-center gap-1.5 text-sm">
         <button type="button" class="btn btn-sm btn-box" (click)="removeSheet()" title="Retirer la dernière feuille (2 pages)"><i class="bi bi-dash-lg"></i></button>
         <span>{{ pageCount() }} pages</span>
         <button type="button" class="btn btn-sm btn-box" (click)="addSheet()" title="Ajouter une feuille (2 pages)"><i class="bi bi-plus-lg"></i></button>

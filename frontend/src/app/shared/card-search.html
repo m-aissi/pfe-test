@@ -1,21 +1,24 @@
-<div class="flex h-full min-h-0 flex-col gap-2">
-  <div class="flex gap-1">
-    <input class="input" type="search" placeholder="Nom de carte (FR ou EN)..." [(ngModel)]="query" (ngModelChange)="onChange()" (keydown.enter)="search(0)" enterkeyhint="search">
-    <button type="button" class="btn btn-box relative" (click)="showFilters.set(!showFilters())" title="Filtres">
-      <i class="bi bi-funnel-fill"></i>
+<div class="flex h-full min-h-0 min-w-0 flex-col gap-2">
+  <input class="input" type="search" placeholder="Nom de carte (FR ou EN)..." [(ngModel)]="query" (ngModelChange)="onChange()" (keydown.enter)="search(0)" enterkeyhint="search">
+
+  <!-- tris ; sur téléphone les tris secondaires restent cachés tant que le chevron (qui ouvre aussi les filtres) est replié -->
+  <div class="flex items-center gap-1">
+    <div class="flex min-w-0 flex-1 flex-wrap gap-1">
+      @for (option of sorts; track option.value) {
+        <button type="button" class="btn btn-sm rounded-full whitespace-nowrap" [class.max-sm:hidden]="option.secondary && !showFilters() && sort() != option.value"
+          [class]="sort() == option.value ? 'bg-primary' : 'bg-black/25 hover:bg-black/40'"
+          (click)="setSort(option.value)" [title]="option.value == 'random' && sort() == 'random' ? 'Remélanger' : option.label">
+          <i class="bi" [class]="option.value == 'random' && sort() == 'random' ? 'bi-arrow-repeat' : option.icon"></i> {{ option.label }}
+        </button>
+      }
+    </div>
+    <button type="button" class="btn btn-sm relative shrink-0 self-start bg-black/25 hover:bg-black/40" (click)="showFilters.set(!showFilters())"
+      [title]="showFilters() ? 'Masquer les filtres' : 'Plus de tris et filtres'">
+      <i class="bi bi-funnel"></i> <i class="bi" [class]="showFilters() ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
       @if (activeFilters()) {
-        <span class="absolute -top-1 -right-1 rounded-full bg-primary px-1.5 text-xs">{{ activeFilters() }}</span>
+        <span class="absolute -top-1.5 -right-1.5 rounded-full bg-primary px-1.5 text-xs">{{ activeFilters() }}</span>
       }
     </button>
-  </div>
-
-  <div class="-mx-0.5 flex gap-1 overflow-x-auto px-0.5 pb-0.5 [scrollbar-width:none]">
-    @for (option of sorts; track option.value) {
-      <button type="button" class="btn btn-sm shrink-0 rounded-full whitespace-nowrap" [class]="sort() == option.value ? 'bg-primary' : 'bg-black/25 hover:bg-black/40'"
-        (click)="setSort(option.value)" [title]="option.value == 'random' && sort() == 'random' ? 'Remélanger' : option.label">
-        <i class="bi" [class]="option.value == 'random' && sort() == 'random' ? 'bi-arrow-repeat' : option.icon"></i> {{ option.label }}
-      </button>
-    }
   </div>
 
   @if (archetype()) {

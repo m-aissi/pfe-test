@@ -72,7 +72,6 @@ export class BinderEditor {
   readonly pickedSlot = signal<SlotRef | null>(null);
   readonly moving = signal(false);
   readonly searchOpen = signal(false);
-  readonly showSettings = signal(false);
   readonly dragOver = signal<string | null>(null);
   private dragSource: DragSource | null = null;
 
@@ -111,7 +110,16 @@ export class BinderEditor {
     this.single.set(media.matches);
     const onMedia = (event: MediaQueryListEvent) => this.single.set(event.matches);
     media.addEventListener('change', onMedia);
+    // onglet fermé ou rechargé juste après une modification : envoi immédiat, qui survit à la fermeture (keepalive)
+    const onPageHide = () => {
+      if (this.saveState() != 'pending') return;
+      clearTimeout(this.saveTimer);
+      const binder = this.binder();
+      if (binder) fetch('/api/me/binders/' + binder.id, { method: 'PUT', keepalive: true, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.payload(binder)) });
+    };
+    window.addEventListener('pagehide', onPageHide);
     inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('pagehide', onPageHide);
       media.removeEventListener('change', onMedia);
       // les dernières modifications partent avant de quitter la page
       if (this.saveState() == 'pending') this.save();
@@ -147,16 +155,20 @@ export class BinderEditor {
     if (!binder) return;
     this.saveState.set('saving');
     try {
-      await this.api.put('/me/binders/' + binder.id, {
-        name: binder.name,
-        firstPageAlone: binder.firstPageAlone,
-        pages: binder.pages.map((page) => page.map((slot) => (slot ? { imageId: slot.imageId, owned: slot.owned } : null))),
-      });
+      await this.api.put('/me/binders/' + binder.id, this.payload(binder));
       // une modification arrivée pendant l'envoi sera enregistrée par son propre minuteur
       if (this.saveState() == 'saving') this.saveState.set('saved');
     } catch {
       this.saveState.set('error');
     }
+  }
+
+  private payload(binder: Binder) {
+    return {
+      name: binder.name,
+      firstPageAlone: binder.firstPageAlone,
+      pages: binder.pages.map((page) => page.map((slot) => (slot ? { imageId: slot.imageId, owned: slot.owned } : null))),
+    };
   }
 
   retrySave() {

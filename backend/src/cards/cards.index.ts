@@ -31,6 +31,9 @@ export interface Artwork {
   cardId: number;
 }
 
+// ygoprodeck n'a pas d'illustration recadrée pour les cartes en avant-première (identifiants à 9 chiffres)
+export const hasCroppedArt = (imageId: number) => imageId < 100_000_000;
+
 const SCYTHE_KEYWORDS = ['scythe', 'reaper', 'faucheur', 'faux', 'death', 'grim', 'harvest', 'sickle', 'kama'];
 
 // vue allégée de toutes les cartes gardée en mémoire : évite un aller-retour Mongo pour les calculs faits à chaque requête
@@ -85,6 +88,8 @@ export class CardsIndex {
           archetype = { name: doc.archetype, cardIds: [], totalPrice: 0, cover: doc.images[0] };
           archetypeByName.set(doc.archetype, archetype);
         }
+        // couverture : la première carte qui a une illustration recadrée
+        if (!hasCroppedArt(archetype.cover) && hasCroppedArt(doc.images[0])) archetype.cover = doc.images[0];
         archetype.cardIds.push(doc._id);
         archetype.totalPrice += doc.price;
       }

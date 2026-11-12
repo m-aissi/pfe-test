@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CardsIndex } from '../cards/cards.index';
+import { CardsIndex, hasCroppedArt } from '../cards/cards.index';
 import { CardDto, CardsService } from '../cards/cards.service';
 import { roundPrice } from '../cards/normalize';
 import { customKey, officialKey, SCYTHE_KEY, SCYTHE_NAME } from './collection.schema';
@@ -34,6 +34,8 @@ export interface ArchetypeDetail {
   kind: ArchetypeKind;
   name: string;
   cards: ArchetypeCard[];
+  // couverture affichée sur l'accueil (choisie par l'utilisateur ou par défaut)
+  cover: number | null;
   // définition d'un archétype perso, pour pouvoir le modifier
   sources?: string[];
   cardIds?: number[];
@@ -66,8 +68,7 @@ export class ArchetypesService {
     }
     for (const custom of customs) {
       const cardIds = this.customs.expand(custom);
-      const cover = cardIds.length ? this.index.cards.get(cardIds[0])!.images[0] : null;
-      archetypes.push(this.entry(customKey(String(custom._id)), 'custom', custom.name, cardIds, cover, collection));
+      archetypes.push(this.entry(customKey(String(custom._id)), 'custom', custom.name, cardIds, this.defaultCover(cardIds), collection));
     }
     if (found.length) {
       archetypes.push(this.entry(SCYTHE_KEY, 'scythe', SCYTHE_NAME, found.map(artwork => artwork.cardId), found[0].imageId, collection));
@@ -82,11 +83,23 @@ export class ArchetypesService {
   }
 
   async detail(key: string, userId: string | null): Promise<ArchetypeDetail> {
+    const detail = await this.rawDetail(key, userId);
+    const covers = userId ? (await this.collection.load(userId)).covers : EMPTY_COLLECTION.covers;
+    return { ...detail, cover: covers.get(key) ?? detail.cover };
+  }
+
+  // première carte qui a une illustration recadrée
+  private defaultCover(cardIds: number[]): number | null {
+    const images = cardIds.map(id => this.index.cards.get(id)!.images[0]);
+    return images.find(hasCroppedArt) ?? images[0] ?? null;
+  }
+
+  private async rawDetail(key: string, userId: string | null): Promise<ArchetypeDetail> {
     if (key.startsWith('a:')) {
       const archetype = this.index.archetypeByName.get(key.slice(2));
       if (!archetype) throw new NotFoundException('Archétype introuvable');
       const cards = await this.cards.findByArchetype(archetype.name);
-      return { key, kind: 'official', name: archetype.name, cards: cards.map(card => ({ ...card, imageId: card.images[0] })) };
+      return { key, kind: 'official', name: archetype.name, cover: archetype.cover, cards: cards.map(card => ({ ...card, imageId: card.images[0] })) };
     }
 
     if (!userId) throw new UnauthorizedException('Connexion requise');
@@ -97,6 +110,7 @@ export class ArchetypesService {
         key,
         kind: 'scythe',
         name: SCYTHE_NAME,
+        cover: found[0]?.imageId ?? null,
         cards: found.map(artwork => ({ ...byId.get(artwork.cardId)!, imageId: artwork.imageId })),
       };
     }
@@ -107,6 +121,7 @@ export class ArchetypesService {
         key,
         kind: 'custom',
         name: custom.name,
+        cover: this.defaultCover(cards.map(card => card.id)),
         cards: cards.map(card => ({ ...card, imageId: card.images[0] })),
         sources: custom.archetypes,
         cardIds: this.index.resolveCardIds(custom.cardIds),
@@ -153,7 +168,7 @@ export class ArchetypesService {
       key,
       kind,
       name,
-      cover,
+      cover: collection.covers.get(key) ?? cover,
       cardCount: cardIds.length,
       ownedCount,
       totalPrice: roundPrice(totalPrice),

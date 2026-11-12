@@ -1,7 +1,8 @@
 import { Component, computed, HostListener, inject, input, output } from '@angular/core';
 import { Card } from '../core/api';
 import { Prefs } from '../core/prefs';
-import { formatPrice, imgUrl } from '../core/util';
+import { CardmarketLink } from './cardmarket-link';
+import { imgUrl } from '../core/util';
 
 // couleur du bandeau de titre selon le cadre de la carte (une carte Pendule prend la couleur de son type de base)
 const FRAME_COLORS: Record<string, string> = {
@@ -22,6 +23,7 @@ const FRAME_COLORS: Record<string, string> = {
 // Le contenu projeté (<ng-content>) s'affiche sous la fiche : boutons d'action propres à chaque écran.
 @Component({
   selector: 'app-card-zoom',
+  imports: [CardmarketLink],
   template: `
     <div class="fixed inset-0 z-[60] flex cursor-zoom-out overflow-y-auto bg-black/55 backdrop-blur-md" (click)="close.emit()">
       <div class="m-auto flex w-full max-w-6xl cursor-default flex-col items-center gap-4 p-4 pt-14 md:flex-row md:items-start md:justify-center md:gap-8 md:p-8"
@@ -49,10 +51,7 @@ const FRAME_COLORS: Record<string, string> = {
                 <span class="rounded-md bg-white/10 px-2 py-0.5"><span class="text-white/60">{{ stat.label }}</span> {{ stat.value }}</span>
               }
             </div>
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-white/60">Cardmarket</span>
-              <span class="font-semibold">{{ formatPrice(card().price) }}</span>
-            </div>
+            <app-cardmarket-link [card]="card()" />
             <!-- actions avant le texte : visibles sans défiler sur téléphone -->
             <ng-content />
             @if (text(); as t) {
@@ -67,7 +66,6 @@ const FRAME_COLORS: Record<string, string> = {
 export class CardZoom {
   readonly prefs = inject(Prefs);
   readonly imgUrl = imgUrl;
-  readonly formatPrice = formatPrice;
 
   readonly card = input.required<Card>();
   readonly imageId = input<number | null>(null);

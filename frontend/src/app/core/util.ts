@@ -4,6 +4,11 @@ export function imgUrl(kind: 'cards' | 'small' | 'cropped', imageId: number): st
   return `/api/img/${kind}/${imageId}.jpg`;
 }
 
+// recherche de la carte sur Cardmarket (par nom anglais, le seul que Cardmarket reconnaît partout)
+export function cardmarketUrl(card: { name: string }): string {
+  return 'https://www.cardmarket.com/fr/YuGiOh/Products/Search?searchString=' + encodeURIComponent(card.name);
+}
+
 // même forme de recherche que le backend : minuscules, sans accents ni ponctuation
 export function normalize(text: string): string {
   return text

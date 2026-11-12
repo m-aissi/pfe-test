@@ -66,6 +66,8 @@ export interface ArchetypeDetail {
   kind: ArchetypeKind;
   name: string;
   cards: ArchetypeCard[];
+  // couverture affichée sur l'accueil
+  cover: number | null;
   sources?: string[];
   cardIds?: number[];
 }
