@@ -1,0 +1,42 @@
+<div class="mx-auto flex max-w-5xl flex-col gap-3 p-3 sm:p-4">
+  <div class="flex items-center gap-2">
+    <a routerLink="/" class="btn btn-sm btn-dark" title="Retour"><i class="bi bi-arrow-left"></i></a>
+    <h1 class="text-xl font-medium">Fusionner des archétypes</h1>
+  </div>
+  <p class="text-sm text-white/70">
+    Les archétypes choisis sont remplacés par un seul archétype perso. Ses futures cartes y arriveront toutes seules,
+    et le supprimer fera réapparaître les archétypes d'origine.
+  </p>
+
+  <div class="grid gap-3 md:grid-cols-2">
+    <section class="panel flex flex-col gap-2 p-3">
+      <input class="input" type="search" placeholder="Filtrer par nom d'archétype" [(ngModel)]="filter">
+      <ul class="max-h-[50dvh] overflow-y-auto">
+        @for (archetype of available(); track archetype.key) {
+          <li class="mb-1 flex items-center gap-2 rounded bg-sunken py-1 pr-1 pl-3">
+            <span class="min-w-0 flex-1 truncate">{{ archetype.name }} <span class="text-sm text-white/50">· {{ archetype.cardCount }} cartes</span></span>
+            <button type="button" class="btn btn-sm btn-box" (click)="add(archetype)" title="Ajouter"><i class="bi bi-plus-lg"></i></button>
+          </li>
+        } @empty {
+          <li class="p-4 text-center text-sm text-white/55">Aucun archétype ne correspond</li>
+        }
+      </ul>
+    </section>
+
+    <section class="panel flex flex-col gap-2 p-3">
+      <h2 class="font-medium">À fusionner ({{ selected().length }}) · {{ cardCount() }} cartes</h2>
+      <ul class="max-h-[40dvh] overflow-y-auto">
+        @for (archetype of selected(); track archetype.key) {
+          <li class="mb-1 flex items-center gap-2 rounded bg-sunken py-1 pr-1 pl-3">
+            <span class="min-w-0 flex-1 truncate">{{ archetype.name }}</span>
+            <button type="button" class="btn btn-sm btn-dark" (click)="remove(archetype)" title="Retirer"><i class="bi bi-dash-lg"></i></button>
+          </li>
+        } @empty {
+          <li class="p-4 text-center text-sm text-white/55">Ajoute des archétypes depuis la liste</li>
+        }
+      </ul>
+      <input class="input" placeholder="Nom du nouvel archétype..." maxlength="60" [(ngModel)]="name">
+      <button type="button" class="btn btn-primary" [disabled]="saving() || selected().length < 2" (click)="merge()"><i class="bi bi-union"></i> Fusionner</button>
+    </section>
+  </div>
+</div>

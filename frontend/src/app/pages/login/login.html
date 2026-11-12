@@ -1,0 +1,51 @@
+<div class="mx-auto max-w-sm p-4 pt-8">
+  <div class="panel flex flex-col gap-4 p-5">
+    <h1 class="text-center text-xl font-medium">{{ mode == 'login' ? 'Connexion' : 'Créer un compte' }}</h1>
+
+    @if (auth.providers().google || auth.providers().discord) {
+      <div class="flex flex-col gap-2">
+        @if (auth.providers().google) {
+          <a href="/api/auth/oauth/google" class="btn bg-white text-black! hover:bg-white/85"><i class="bi bi-google"></i> Continuer avec Google</a>
+        }
+        @if (auth.providers().discord) {
+          <a href="/api/auth/oauth/discord" class="btn bg-[#5865f2] hover:bg-[#4752c4]"><i class="bi bi-discord"></i> Continuer avec Discord</a>
+        }
+      </div>
+      <div class="flex items-center gap-2 text-xs text-white/50"><span class="h-px flex-1 bg-white/20"></span> ou avec un pseudo <span class="h-px flex-1 bg-white/20"></span></div>
+    }
+
+    <form class="flex flex-col gap-3" (ngSubmit)="submit()">
+      <label class="flex flex-col gap-1 text-sm">
+        Pseudo
+        <input class="input" name="username" autocomplete="username" autocapitalize="none" required [(ngModel)]="username">
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        Mot de passe
+        <input class="input" type="password" name="password" required [autocomplete]="mode == 'login' ? 'current-password' : 'new-password'" [(ngModel)]="password">
+      </label>
+      @if (mode == 'register') {
+        <label class="flex flex-col gap-1 text-sm">
+          Confirme le mot de passe
+          <input class="input" type="password" name="confirm" autocomplete="new-password" required [(ngModel)]="confirm">
+        </label>
+        <p class="text-xs text-white/55">Pseudo : 2 à 24 caractères (lettres, chiffres, espaces, points, - ou _). Mot de passe : 4 caractères minimum.</p>
+      }
+      <label class="flex cursor-pointer items-center gap-2 text-sm">
+        <input type="checkbox" name="remember" [(ngModel)]="remember"> Rester connecté
+        <span class="text-xs text-white/50">(décoche sur un appareil qui n'est pas à toi)</span>
+      </label>
+      @if (error()) {
+        <p class="rounded bg-red-900/60 px-3 py-2 text-sm">{{ error() }}</p>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">{{ mode == 'login' ? 'Se connecter' : 'Créer mon compte' }}</button>
+    </form>
+
+    <p class="text-center text-sm text-white/70">
+      @if (mode == 'login') {
+        Pas encore de compte ? <a routerLink="/inscription" queryParamsHandling="preserve" class="text-primary underline">Inscris-toi</a>
+      } @else {
+        Déjà un compte ? <a routerLink="/connexion" queryParamsHandling="preserve" class="text-primary underline">Connecte-toi</a>
+      }
+    </p>
+  </div>
+</div>

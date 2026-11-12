@@ -1,0 +1,53 @@
+<div class="page-fill mx-auto flex max-w-[110rem] flex-col gap-3 p-3 sm:p-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <a [routerLink]="editKey() ? '/archetype' : '/'" [queryParams]="editKey() ? { key: editKey() } : {}" class="btn btn-sm btn-dark" title="Retour"><i class="bi bi-arrow-left"></i></a>
+    <h1 class="text-xl font-medium">{{ editKey() ? "Modifier l'archétype" : 'Créer un archétype' }}</h1>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <input class="input grow basis-48 sm:max-w-sm" placeholder="Nom de l'archétype..." maxlength="60" [(ngModel)]="name">
+    <button type="button" class="btn btn-primary" [disabled]="saving() || loading()" (click)="save()">
+      <i class="bi bi-check-lg"></i> {{ editKey() ? 'Enregistrer' : 'Créer' }}
+    </button>
+  </div>
+
+  <div class="flex gap-1 md:hidden">
+    <button type="button" class="btn btn-sm flex-1" [class]="tab() == 'search' ? 'bg-white/25' : 'bg-black/25'" (click)="tab.set('search')">Rechercher</button>
+    <button type="button" class="btn btn-sm flex-1" [class]="tab() == 'selection' ? 'bg-white/25' : 'bg-black/25'" (click)="tab.set('selection')">Sélection ({{ cards().length }})</button>
+  </div>
+
+  <div class="flex min-h-0 flex-1 gap-4">
+    <section class="min-h-0 flex-1 md:block" [class.hidden]="tab() != 'search'">
+      <app-card-search [markedCardIds]="cardIds()" (pick)="toggle($event)" />
+    </section>
+
+    <section class="panel min-h-0 flex-col p-3 md:flex md:w-80 md:shrink-0" [class.hidden]="tab() != 'selection'" [class.flex]="tab() == 'selection'">
+      <p class="mb-2 text-sm text-white/70">
+        {{ cards().length }} carte(s) choisie(s) · {{ formatPrice(totalPrice()) }}
+        <span class="hidden md:inline">— clique une carte à gauche pour l'ajouter ou la retirer</span>
+      </p>
+      @if (sources().length) {
+        <p class="mb-1 text-xs text-white/60 uppercase">Archétypes regroupés</p>
+        <div class="mb-3 flex flex-wrap gap-1">
+          @for (source of sources(); track source) {
+            <span class="flex items-center gap-1 rounded bg-black/30 py-0.5 pl-2 text-sm">
+              {{ source }}
+              <button type="button" class="cursor-pointer px-1.5" (click)="removeSource(source)" title="Retirer"><i class="bi bi-x"></i></button>
+            </span>
+          }
+        </div>
+      }
+      <ul class="min-h-0 flex-1 overflow-y-auto">
+        @for (card of cards(); track card.id) {
+          <li class="mb-1 flex items-center gap-2 rounded bg-sunken p-1 pr-2">
+            <img [src]="imgUrl('small', card.images[0])" alt="" class="card-ratio w-9 rounded">
+            <span class="min-w-0 flex-1 truncate text-sm">{{ prefs.cardName(card) }}</span>
+            <button type="button" class="btn btn-sm btn-dark" (click)="removeCard(card)" title="Retirer"><i class="bi bi-x-lg"></i></button>
+          </li>
+        } @empty {
+          <li class="p-4 text-center text-sm text-white/55">Aucune carte choisie pour l'instant</li>
+        }
+      </ul>
+    </section>
+  </div>
+</div>

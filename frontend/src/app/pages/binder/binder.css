@@ -1,0 +1,55 @@
+/* taille d'une case : calée sur la hauteur de l'écran en double page, sur la largeur en page seule (téléphone) */
+.spread {
+  --slot-base: min(16dvh, 8.5vw);
+  --slot-w: calc(var(--slot-base) * var(--zoom, 1));
+  display: flex;
+  gap: calc(1.2vw * var(--zoom, 1));
+  margin: auto;
+  padding: 12px;
+}
+
+/* page seule (téléphone) : la page tient entière à l'écran, en largeur (3 cases moins marges et cadre)
+   comme en hauteur (3 cases de ratio 59/86 dans la place laissée par les barres, d'où le facteur 59 / 86 / 3) */
+.spread.single {
+  --slot-base: min(calc((100vw - 3.5rem) / 3), calc((100dvh - var(--top-bar) - var(--bottom-bar) - 9rem) * 0.2287));
+  padding: 4px;
+}
+
+.binder-page {
+  display: grid;
+  grid-template-columns: repeat(3, var(--slot-w));
+  grid-template-rows: repeat(3, calc(var(--slot-w) * 86 / 59));
+  gap: calc(0.35rem * var(--zoom, 1));
+  padding: calc(0.45rem * var(--zoom, 1));
+  background: var(--color-sunken);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.5);
+}
+
+.binder-page.cover {
+  background: var(--color-cover);
+}
+
+.slot {
+  position: relative;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.slot.can-place:hover,
+.slot.drag-over {
+  outline: 2px dashed var(--color-primary);
+}
+
+.slot.picked {
+  outline: 3px solid var(--color-primary);
+}
+
+.slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 3px;
+  pointer-events: none;
+}

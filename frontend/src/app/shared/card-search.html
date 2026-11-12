@@ -1,0 +1,74 @@
+<div class="flex h-full min-h-0 flex-col gap-2">
+  <div class="flex gap-1">
+    <input class="input" type="search" placeholder="Nom de carte (FR ou EN)..." [(ngModel)]="query" (ngModelChange)="onChange()" (keydown.enter)="search(0)" enterkeyhint="search">
+    <button type="button" class="btn btn-box relative" (click)="showFilters.set(!showFilters())" title="Filtres">
+      <i class="bi bi-funnel-fill"></i>
+      @if (activeFilters()) {
+        <span class="absolute -top-1 -right-1 rounded-full bg-primary px-1.5 text-xs">{{ activeFilters() }}</span>
+      }
+    </button>
+  </div>
+
+  @if (showFilters()) {
+    <div class="grid grid-cols-2 gap-1.5 rounded-md bg-black/25 p-2 text-sm">
+      <select class="input col-span-2" [(ngModel)]="filters.type" (ngModelChange)="search(0)">
+        <option value="">Tous les types</option>
+        @for (type of facets().types; track type) { <option [value]="type">{{ type }}</option> }
+      </select>
+      <select class="input" [(ngModel)]="filters.race" (ngModelChange)="search(0)">
+        <option value="">Race / sous-type</option>
+        @for (race of facets().races; track race) { <option [value]="race">{{ race }}</option> }
+      </select>
+      <select class="input" [(ngModel)]="filters.attribute" (ngModelChange)="search(0)">
+        <option value="">Attribut</option>
+        @for (attribute of facets().attributes; track attribute) { <option [value]="attribute">{{ attribute }}</option> }
+      </select>
+      <div class="col-span-2 grid grid-cols-5 gap-1">
+        <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="ATK ≥" [(ngModel)]="filters.atk" (ngModelChange)="onChange()">
+        <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="DEF ≥" [(ngModel)]="filters.def" (ngModelChange)="onChange()">
+        <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="Niv ≥" [(ngModel)]="filters.level" (ngModelChange)="onChange()">
+        <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="Link ≥" [(ngModel)]="filters.link" (ngModelChange)="onChange()">
+        <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="Échelle" [(ngModel)]="filters.scale" (ngModelChange)="onChange()">
+      </div>
+      <label class="col-span-2 flex items-center gap-2">
+        <input type="checkbox" [(ngModel)]="filters.inDesc" (ngModelChange)="search(0)"> Chercher aussi dans le texte des cartes
+      </label>
+      @if (activeFilters()) {
+        <button type="button" class="btn btn-sm btn-dark col-span-2" (click)="resetFilters()">Effacer les filtres</button>
+      }
+    </div>
+  }
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    @if (!loading() && !items().length) {
+      <p class="p-3 text-center text-sm text-white/55">
+        {{ query().trim() || activeFilters() ? 'Aucune carte trouvée' : 'Tape un nom de carte ou choisis un filtre' }}
+      </p>
+    }
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(5.25rem,1fr))] gap-1.5 p-0.5">
+      @for (item of items(); track item.imageId) {
+        <div class="group relative cursor-pointer rounded" [class.ring-3]="item.imageId == selectedImageId()" [class.ring-primary]="item.imageId == selectedImageId()"
+          [title]="prefs.cardName(item.card) + ' · ' + formatPrice(item.card.price)" [attr.draggable]="draggable() ? 'true' : null"
+          (dragstart)="onDragStart(item, $event)" (dragend)="dragEnd.emit()" (click)="pick.emit(item)">
+          <img [src]="imgUrl('small', item.imageId)" [alt]="prefs.cardName(item.card)" loading="lazy" class="card-ratio pointer-events-none block w-full rounded bg-black/30">
+          @if (markedCardIds().has(item.card.id)) {
+            <i class="bi bi-check-circle-fill absolute top-0.5 left-1 text-lg text-owned drop-shadow"></i>
+          }
+          @if (quickLabel()) {
+            <button type="button" class="absolute top-0 right-0 rounded-bl rounded-tr bg-black/65 px-1.5 py-0.5 md:hidden md:group-hover:block" [title]="quickLabel()"
+              (click)="$event.stopPropagation(); quick.emit(item)">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          }
+        </div>
+      }
+    </div>
+    @if (loading()) {
+      <p class="p-3 text-center"><i class="bi bi-arrow-repeat inline-block animate-spin"></i></p>
+    } @else if (hasMore()) {
+      <div class="p-2 text-center">
+        <button type="button" class="btn btn-sm btn-box" (click)="more()">Plus de résultats ({{ total() - cards().length }} restants)</button>
+      </div>
+    }
+  </div>
+</div>

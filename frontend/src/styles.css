@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+@import "@fontsource/roboto/300.css";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+
+/* couleurs de l'ancien site : brun sombre, boutons bleus. "static" : variables toujours générées, le CSS des composants s'en sert */
+@theme static {
+  --color-page: #472d2d;
+  --color-surface: #553939;
+  --color-box: #6a5050;
+  --color-sunken: #2a1c1c;
+  --color-cover: #3a2828;
+  --color-bar: #212529;
+  --color-primary: #0d6efd;
+  --color-primary-hover: #0b5ed7;
+  --color-owned: #3ddc84;
+  --color-wanted: #ff5d73;
+  --font-sans: Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  /* hauteurs de la barre du haut et, sur téléphone, de la barre d'onglets du bas */
+  --top-bar: 3.5rem;
+  --bottom-bar: calc(3.75rem + env(safe-area-inset-bottom));
+}
+
+@media (width >= 48rem) {
+  :root {
+    --bottom-bar: 0px;
+  }
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: white;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ascenseurs discrets, comme sur l'ancien site */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7a6060 transparent;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap text-white transition-colors select-none disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-sm {
+    @apply min-h-8 px-2 py-1;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-hover;
+  }
+
+  .btn-box {
+    @apply bg-box hover:bg-white/25;
+  }
+
+  .btn-dark {
+    @apply bg-black/40 hover:bg-black/60;
+  }
+
+  .btn-danger {
+    @apply bg-red-700 hover:bg-red-800;
+  }
+
+  .btn-active {
+    @apply bg-amber-500 text-black hover:bg-amber-400;
+  }
+
+  .input {
+    @apply min-h-10 w-full rounded-md border border-white/15 bg-black/25 px-3 py-2 text-sm text-white placeholder:text-white/45 focus:border-primary focus:outline-none;
+  }
+
+  select.input {
+    @apply cursor-pointer pr-8;
+  }
+
+  select.input option {
+    @apply bg-sunken text-white;
+  }
+
+  .panel {
+    @apply rounded-lg bg-surface p-4 shadow-lg;
+  }
+
+  /* zone qui occupe exactement l'écran entre la barre du haut et celle du bas (écrans type "application") */
+  .page-fill {
+    height: calc(100dvh - var(--top-bar) - var(--bottom-bar));
+  }
+
+  /* image de carte au format réel 59 x 86 mm */
+  .card-ratio {
+    aspect-ratio: 59 / 86;
+  }
+}
