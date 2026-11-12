@@ -16,3 +16,5 @@ out-tsc/
 .DS_Store
 Thumbs.db
 npm-debug.log
+dist-next/
+dist-old/

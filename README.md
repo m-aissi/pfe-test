@@ -2,7 +2,7 @@
 
 Suivi de collection Yu-Gi-Oh! : archétypes, cartes possédées et voulues, archétypes perso, classeurs virtuels de 9 cases et chasse aux faux. En ligne sur https://yugioh.miroirdesreves.com.
 
-- `backend/` : API NestJS + MongoDB. Elle copie la base de cartes ygoprodeck dans Mongo (synchro la nuit, seulement si leur version a changé), met en cache les images sur le disque et gère les comptes. Elle sert aussi le front compilé.
+- `backend/` : API NestJS + MongoDB. Elle copie la base de cartes ygoprodeck dans Mongo (synchro complète chaque nuit à 4 h 30, prix compris), met en cache les images sur le disque et gère les comptes. Elle sert aussi le front compilé.
 - `frontend/` : Angular 21 + Tailwind, pensé pour le téléphone d'abord.
 
 ## Développement

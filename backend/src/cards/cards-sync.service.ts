@@ -8,8 +8,9 @@ import { CardsIndex } from './cards.index';
 import { normalize } from './normalize';
 
 const API = 'https://db.ygoprodeck.com/api/v7';
-// même sans nouvelle version de leur base, on recharge tout une fois par semaine pour rafraîchir les prix
-const FULL_RESYNC_DAYS = 7;
+// même sans nouvelle version de leur base, on recharge tout chaque nuit pour rafraîchir les prix ;
+// 20 h plutôt que 24 : la synchro de la veille compte comme périmée à 4 h 30, mais pas un redémarrage dans la journée
+const FULL_RESYNC_HOURS = 20;
 const OPTIONAL_FIELDS = ['attribute', 'atk', 'def', 'level', 'scale', 'linkval', 'archetype'];
 
 interface DbVersion {
@@ -57,7 +58,7 @@ export class CardsSyncService implements OnApplicationBootstrap {
   async checkAndSync(): Promise<boolean> {
     const [remote]: DbVersion[] = await this.fetchJson(`${API}/checkDBVer.php`);
     const meta = await this.metaModel.findById('cards').lean();
-    const fresh = meta && Date.now() - new Date(meta.syncedAt).getTime() < FULL_RESYNC_DAYS * 86_400_000;
+    const fresh = meta && Date.now() - new Date(meta.syncedAt).getTime() < FULL_RESYNC_HOURS * 3_600_000;
     if (meta && fresh && meta.databaseVersion === remote.database_version && meta.lastUpdate === remote.last_update) {
       this.logger.log(`Base de cartes à jour (version ${meta.databaseVersion})`);
       return false;

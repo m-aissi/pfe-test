@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "install:all": "npm --prefix backend ci && npm --prefix frontend ci",
-    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "build": "./scripts/build-frontend.sh && npm --prefix backend run build",
     "start": "pm2 start ecosystem.config.js",
     "stop": "pm2 stop yugioh",
     "restart": "pm2 restart yugioh",
