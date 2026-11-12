@@ -13,6 +13,8 @@ export interface IndexedCard {
   images: number[];
   // position de la carte dans l'ordre alphabétique, pour trier une liste d'identifiants sans relire les noms
   rank: number;
+  // apparition de la carte dans la base (ms), 0 si elle y était avant le suivi
+  addedAt: number;
   // le nom ou le texte de la carte évoque une faux (ordre "probables" de la chasse aux faux)
   probable: boolean;
 }
@@ -54,7 +56,7 @@ export class CardsIndex {
 
   async rebuild() {
     const docs = await this.cardModel
-      .find({}, { name: 1, nameFr: 1, desc: 1, descFr: 1, archetype: 1, price: 1, images: 1, type: 1, race: 1, attribute: 1 })
+      .find({}, { name: 1, nameFr: 1, desc: 1, descFr: 1, archetype: 1, price: 1, images: 1, type: 1, race: 1, attribute: 1, addedAt: 1 })
       .sort({ nameSearch: 1 })
       .lean();
 
@@ -76,6 +78,7 @@ export class CardsIndex {
         price: doc.price,
         images: doc.images,
         rank: cards.size,
+        addedAt: doc.addedAt ? new Date(doc.addedAt).getTime() : 0,
         probable: SCYTHE_KEYWORDS.some(keyword => text.includes(keyword)),
       });
       for (const imageId of doc.images) {

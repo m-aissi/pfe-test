@@ -66,6 +66,10 @@ export class Card {
   @Prop()
   tcgDate?: string;
 
+  // première synchro où la carte est apparue (badge "nouveau") ; date zéro pour les cartes déjà là avant la fonctionnalité
+  @Prop()
+  addedAt?: Date;
+
   @Prop({ required: true })
   syncedAt: Date;
 }

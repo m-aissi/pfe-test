@@ -82,8 +82,15 @@ export class CardsSyncService implements OnApplicationBootstrap {
       // l'identifiant principal n'est pas le même dans la version française et dans la version anglaise
       const frByName = new Map<string, any>(fr.map(card => [card.name_en, card]));
       const syncedAt = new Date();
+      // date d'apparition conservée d'une synchro à l'autre ; base vide (première installation) : rien n'est "nouveau"
+      const known = new Map((await this.cardModel.find({}, { addedAt: 1 }).lean()).map(doc => [doc._id, doc.addedAt ?? new Date(0)]));
+      const firstSync = known.size == 0;
       const operations = en.map(card => ({
-        replaceOne: { filter: { _id: card.id }, replacement: this.toDocument(card, frByName.get(card.name), syncedAt), upsert: true },
+        replaceOne: {
+          filter: { _id: card.id },
+          replacement: { ...this.toDocument(card, frByName.get(card.name), syncedAt), addedAt: known.get(card.id) ?? (firstSync ? new Date(0) : syncedAt) },
+          upsert: true,
+        },
       }));
       // pilote natif : le bulkWrite de Mongoose écarte sans erreur les opérations qu'il juge invalides
       for (let i = 0; i < operations.length; i += 1000) {

@@ -26,6 +26,10 @@ export class User {
 
   @Prop()
   lastLoginAt?: Date;
+
+  // gère les archétypes du site, communs à tous les comptes (npm run set-admin)
+  @Prop({ default: false })
+  admin: boolean;
 }
 
 export type UserDocument = HydratedDocument<User>;

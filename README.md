@@ -39,7 +39,14 @@ yugioh.miroirdesreves.com {
 Inscription ouverte avec pseudo + mot de passe, et connexion Google / Discord si leurs identifiants sont renseignés dans `backend/.env` (voir `backend/.env.example`). Il n'y a pas d'email : un mot de passe oublié se réinitialise depuis le serveur.
 
 ```bash
-cd backend && npm run set-password -- <pseudo> <nouveau mot de passe>
+# MONGO_URI : sans lui, les scripts visent la base de dev (yugioh_dev)
+cd backend && MONGO_URI=mongodb://127.0.0.1:27017/yugioh npm run set-password -- <pseudo> <nouveau mot de passe>
+```
+
+Un compte admin peut créer des **archétypes du site**, communs à tous : ils regroupent des archétypes officiels (qui disparaissent alors de la liste de tout le monde) et des cartes ajoutées une à une. Les nouvelles cartes des archétypes regroupés y arrivent toutes seules à chaque synchro. Depuis l'appli : case « Pour tout le monde » à la création, ou bouton « Publier pour tous » sur un archétype perso.
+
+```bash
+cd backend && MONGO_URI=mongodb://127.0.0.1:27017/yugioh npm run set-admin -- <pseudo>        # "off" en plus pour retirer le rôle
 ```
 
 Les données de l'ancien site (classeurs et tri des faux restés dans le navigateur, fichiers `YGOToolsProfile.json` et `YGOToolsBinders.json`) s'importent depuis l'appli une fois connecté.

@@ -4,13 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Api, ArchetypeCard, ArchetypeDetail, Card } from '../../core/api';
 import { Auth } from '../../core/auth';
 import { CollectionStore } from '../../core/collection';
-import { Prefs } from '../../core/prefs';
+import { ArchetypeSort, Prefs } from '../../core/prefs';
 import { Toasts } from '../../core/toast';
 import { copyText, formatPrice, imgUrl, roundPrice, typeLine } from '../../core/util';
 import { CardZoom } from '../../shared/card-zoom';
 import { CardmarketLink } from '../../shared/cardmarket-link';
 
-type Filter = 'all' | 'missing' | 'owned' | 'wanted';
+
 
 @Component({
   selector: 'app-archetype',
@@ -31,19 +31,12 @@ export class Archetype {
 
   readonly detail = signal<ArchetypeDetail | null>(null);
   readonly notFound = signal(false);
-  readonly filter = signal<Filter>('all');
   readonly selected = signal<ArchetypeCard | null>(null);
   // carte affichée en plein écran (clic sur l'aperçu, ou toucher une carte sur téléphone)
   readonly zoomOpen = signal(false);
   // texte complet des cartes, chargé à la demande
   private readonly descriptions = signal(new Map<number, Card>());
 
-  readonly filters: { value: Filter; label: string }[] = [
-    { value: 'all', label: 'Toutes' },
-    { value: 'missing', label: 'À acheter' },
-    { value: 'owned', label: 'Possédées' },
-    { value: 'wanted', label: 'Voulues' },
-  ];
 
   readonly stats = computed(() => {
     const cards = this.detail()?.cards ?? [];
@@ -60,21 +53,34 @@ export class Archetype {
     };
   });
 
-  readonly visible = computed(() => {
+  // voulues d'abord, possédées à la fin, puis le tri choisi, puis le nom
+  readonly sorted = computed(() => {
     const cards = this.detail()?.cards ?? [];
     const owned = this.collection.owned();
     const wanted = this.collection.wanted();
-    switch (this.filter()) {
-      case 'missing':
-        return cards.filter((card) => !owned.has(card.id));
-      case 'owned':
-        return cards.filter((card) => owned.has(card.id));
-      case 'wanted':
-        return cards.filter((card) => wanted.has(card.id));
-      default:
-        return cards;
-    }
+    const { sort } = this.prefs.archetypeSort();
+    const group = (card: Card) => (owned.has(card.id) ? 2 : wanted.has(card.id) ? 0 : 1);
+    const compare: Record<ArchetypeSort, (a: Card, b: Card) => number> = {
+      name: () => 0,
+      price: (a, b) => a.price - b.price,
+      'price-desc': (a, b) => b.price - a.price,
+      new: (a, b) => (b.tcgDate ?? '').localeCompare(a.tcgDate ?? ''),
+    };
+    return [...cards].sort(
+      (a, b) => group(a) - group(b) || (compare[sort] ?? compare.name)(a, b) || this.prefs.cardName(a).localeCompare(this.prefs.cardName(b)),
+    );
   });
+
+  readonly visible = this.sorted;
+
+  setSort(sort: ArchetypeSort) {
+    this.prefs.setArchetypeSort({ sort });
+  }
+
+  // un seul bouton prix : moins chères d'abord, puis plus chères au clic suivant
+  togglePrice() {
+    this.setSort(this.prefs.archetypeSort().sort == 'price' ? 'price-desc' : 'price');
+  }
 
   readonly selectedDescription = computed(() => {
     const card = this.selected();
@@ -164,15 +170,23 @@ export class Archetype {
   }
 
   edit() {
-    this.router.navigate(['/archetypes/modifier'], { queryParams: { key: this.detail()!.key } });
+    const detail = this.detail()!;
+    // un archétype officiel ne se modifie pas : l'éditeur part de lui pour créer un archétype du site (admin) ou perso
+    if (detail.kind == 'official') this.router.navigate(['/archetypes/nouveau'], { queryParams: { from: detail.key } });
+    else this.router.navigate(['/archetypes/modifier'], { queryParams: { key: detail.key } });
   }
 
-  async remove() {
+  mergeWithOthers() {
+    this.router.navigate(['/archetypes/fusion'], { queryParams: { with: this.detail()!.key } });
+  }
+
+  // admin : l'archétype perso devient un archétype du site, mis à jour pour tous les comptes
+  async publish() {
     const detail = this.detail()!;
-    if (!confirm(`Supprimer l'archétype "${detail.name}" ? Les archétypes officiels qu'il regroupait réapparaîtront.`)) return;
-    await this.api.delete('/me/custom-archetypes/' + detail.key.slice(2));
-    this.toasts.success('Archétype supprimé');
-    this.router.navigateByUrl('/');
+    if (!confirm(`Publier "${detail.name}" pour tous ? Les archétypes officiels qu'il regroupe disparaîtront de la liste de tout le monde, remplacés par celui-ci.`)) return;
+    const { key } = await this.api.post<{ key: string }>('/admin/site-archetypes/publish/' + detail.key.slice(2), {});
+    this.toasts.success('Archétype publié pour tous');
+    this.router.navigate(['/archetype'], { queryParams: { key } });
   }
 
   private async loadDescription(cardId: number) {

@@ -18,6 +18,7 @@ export interface PublicUser {
   hasPassword: boolean;
   google: boolean;
   discord: boolean;
+  admin: boolean;
 }
 
 @Injectable()
@@ -25,7 +26,7 @@ export class AuthService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<User>) {}
 
   toPublic(user: UserDocument): PublicUser {
-    return { id: user.id, username: user.username, hasPassword: !!user.passwordHash, google: !!user.googleId, discord: !!user.discordId };
+    return { id: user.id, username: user.username, hasPassword: !!user.passwordHash, google: !!user.googleId, discord: !!user.discordId, admin: !!user.admin };
   }
 
   async isSessionValid(userId: string, tokenVersion: number): Promise<boolean> {

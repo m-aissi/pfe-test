@@ -23,6 +23,7 @@ export interface Card {
   price: number;
   desc?: string;
   descFr?: string;
+  tcgDate?: string;
 }
 
 export interface SearchResult {
@@ -38,7 +39,8 @@ export interface Facets {
   attributes: string[];
 }
 
-export type ArchetypeKind = 'official' | 'custom' | 'scythe';
+// site : archétype regroupé par un admin, commun à tous
+export type ArchetypeKind = 'official' | 'site' | 'custom' | 'scythe';
 
 export interface ArchetypeEntry {
   key: string;
@@ -51,6 +53,8 @@ export interface ArchetypeEntry {
   remainingPrice: number;
   wantedPrice: number;
   favorite: boolean;
+  // cartes arrivées depuis la dernière ouverture
+  newCount: number;
 }
 
 export interface ArchetypeList {
@@ -59,7 +63,7 @@ export interface ArchetypeList {
 }
 
 // imageId : illustration à afficher pour la carte dans cet archétype
-export type ArchetypeCard = Card & { imageId: number };
+export type ArchetypeCard = Card & { imageId: number; isNew?: boolean };
 
 export interface ArchetypeDetail {
   key: string;
@@ -70,6 +74,7 @@ export interface ArchetypeDetail {
   cover: number | null;
   sources?: string[];
   cardIds?: number[];
+  excludedIds?: number[];
 }
 
 export interface Wantlist {
@@ -84,6 +89,7 @@ export interface User {
   hasPassword: boolean;
   google: boolean;
   discord: boolean;
+  admin: boolean;
 }
 
 export interface BinderSlot {

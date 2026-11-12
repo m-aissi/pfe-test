@@ -3,13 +3,14 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
-import { AuthGuard, OptionalAuthGuard, UserId } from '../auth/auth.guard';
+import { AdminGuard, AuthGuard, OptionalAuthGuard, UserId } from '../auth/auth.guard';
 import { parseIds } from '../cards/cards.controller';
 import { ArchetypesService } from './archetypes.service';
-import { customKey } from './collection.schema';
+import { customKey, siteKey } from './collection.schema';
 import { CollectionService } from './collection.service';
 import { CustomArchetypesService } from './custom-archetypes.service';
 import { ScytheService } from './scythe.service';
+import { SiteArchetypesService } from './site-archetypes.service';
 
 const MAX_CARDS = 5000;
 
@@ -50,6 +51,9 @@ class CustomArchetypeDto {
 
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_CARDS) @IsInt({ each: true })
   cardIds: number[] = [];
+
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_CARDS) @IsInt({ each: true })
+  excludedIds: number[] = [];
 }
 
 class MergeDto {
@@ -179,5 +183,39 @@ export class CollectionController {
   async scytheUndo(@UserId() userId: string, @Body() dto: UndoDto) {
     await this.scythe.undo(userId, dto.imageIds);
     return { ok: true };
+  }
+}
+
+// archétypes du site : créés et modifiés par les admins, visibles par tous
+@UseGuards(AdminGuard)
+@Controller('admin/site-archetypes')
+export class AdminArchetypesController {
+  constructor(private readonly sites: SiteArchetypesService) {}
+
+  @Post()
+  async create(@Body() dto: CustomArchetypeDto) {
+    return { key: siteKey((await this.sites.create(dto)).id) };
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() dto: CustomArchetypeDto) {
+    return { key: siteKey((await this.sites.update(id, dto)).id) };
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(@Param('id') id: string) {
+    await this.sites.remove(id);
+  }
+
+  @Post('merge')
+  async merge(@UserId() userId: string, @Body() dto: MergeDto) {
+    return { key: siteKey((await this.sites.merge(userId, dto.name, dto.keys)).id) };
+  }
+
+  // transforme un archétype perso de l'admin en archétype du site
+  @Post('publish/:customId')
+  async publish(@UserId() userId: string, @Param('customId') customId: string) {
+    return { key: siteKey((await this.sites.publish(userId, customId)).id) };
   }
 }

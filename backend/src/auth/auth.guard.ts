@@ -1,4 +1,4 @@
-import { CanActivate, createParamDecorator, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, createParamDecorator, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
@@ -34,6 +34,17 @@ export class AuthGuard extends OptionalAuthGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     await super.canActivate(context);
     if (!context.switchToHttp().getRequest().userId) throw new UnauthorizedException('Connexion requise');
+    return true;
+  }
+}
+
+// réservé aux comptes admin
+@Injectable()
+export class AdminGuard extends AuthGuard {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    await super.canActivate(context);
+    const user = await this.auth.require(context.switchToHttp().getRequest().userId);
+    if (!user.admin) throw new ForbiddenException('Réservé aux administrateurs');
     return true;
   }
 }

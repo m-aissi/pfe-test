@@ -9,6 +9,7 @@ export interface CustomArchetypeInput {
   name: string;
   archetypes: string[];
   cardIds: number[];
+  excludedIds?: number[];
 }
 
 @Injectable()
@@ -30,10 +31,11 @@ export class CustomArchetypesService {
   }
 
   // cartes d'un archétype perso : celles des archétypes fusionnés plus celles choisies une à une, triées par nom
-  expand(custom: { archetypes: string[]; cardIds: number[] }): number[] {
+  expand(custom: { archetypes: string[]; cardIds: number[]; excludedIds?: number[] }): number[] {
     const ids = new Set<number>(this.index.resolveCardIds(custom.cardIds));
+    const excluded = new Set(this.index.resolveCardIds(custom.excludedIds ?? []));
     for (const name of custom.archetypes) {
-      for (const id of this.index.archetypeByName.get(name)?.cardIds ?? []) ids.add(id);
+      for (const id of this.index.archetypeByName.get(name)?.cardIds ?? []) if (!excluded.has(id)) ids.add(id);
     }
     return this.index.sortByName([...ids]);
   }
@@ -62,6 +64,7 @@ export class CustomArchetypesService {
   async merge(userId: string, name: string, keys: string[]): Promise<CustomArchetypeDocument> {
     const archetypes: string[] = [];
     const cardIds: number[] = [];
+    const excludedIds: number[] = [];
     const absorbed: CustomArchetypeDocument[] = [];
     for (const key of new Set(keys)) {
       if (key.startsWith('a:')) {
@@ -70,12 +73,13 @@ export class CustomArchetypesService {
         const custom = await this.require(userId, key.slice(2));
         archetypes.push(...custom.archetypes);
         cardIds.push(...custom.cardIds);
+        excludedIds.push(...(custom.excludedIds ?? []));
         absorbed.push(custom);
       } else {
         throw new BadRequestException('Cet archétype ne peut pas être fusionné');
       }
     }
-    const merged = await this.create(userId, { name, archetypes, cardIds });
+    const merged = await this.create(userId, { name, archetypes, cardIds, excludedIds });
     for (const custom of absorbed) await this.remove(userId, custom.id);
     return merged;
   }
@@ -84,12 +88,13 @@ export class CustomArchetypesService {
     await this.model.deleteMany({ userId });
   }
 
-  private clean(input: CustomArchetypeInput): CustomArchetypeInput {
+  clean(input: CustomArchetypeInput): CustomArchetypeInput {
     const name = input.name.trim();
     const archetypes = [...new Set(input.archetypes)].filter(archetype => this.index.archetypeByName.has(archetype));
     const cardIds = this.index.resolveCardIds(input.cardIds);
+    const excludedIds = this.index.resolveCardIds(input.excludedIds ?? []);
     if (!name) throw new BadRequestException("Donne un nom à l'archétype");
     if (archetypes.length == 0 && cardIds.length == 0) throw new BadRequestException('Ajoute au moins une carte');
-    return { name, archetypes, cardIds };
+    return { name, archetypes, cardIds, excludedIds };
   }
 }

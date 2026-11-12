@@ -23,6 +23,8 @@ export interface CardDto {
   price: number;
   desc?: string;
   descFr?: string;
+  // sortie en TCG (AAAA-MM-JJ), absente pour une carte OCG seulement
+  tcgDate?: string;
 }
 
 export interface SearchParams {
@@ -55,7 +57,7 @@ export interface SearchResult {
   hasMore: boolean;
 }
 
-const INTERNAL_FIELDS = { nameSearch: 0, nameFrSearch: 0, syncedAt: 0, tcgDate: 0 };
+const INTERNAL_FIELDS = { nameSearch: 0, nameFrSearch: 0, syncedAt: 0, addedAt: 0 };
 const LIST_FIELDS = { ...INTERNAL_FIELDS, desc: 0, descFr: 0 };
 
 @Injectable()

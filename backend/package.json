@@ -6,7 +6,8 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
-    "set-password": "node dist/cli/set-password.js"
+    "set-password": "node dist/cli/set-password.js",
+    "set-admin": "node dist/cli/set-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",

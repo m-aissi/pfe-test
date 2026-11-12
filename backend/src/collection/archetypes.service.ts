@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { CardsIndex, hasCroppedArt } from '../cards/cards.index';
 import { CardDto, CardsService } from '../cards/cards.service';
 import { roundPrice } from '../cards/normalize';
-import { customKey, officialKey, SCYTHE_KEY, SCYTHE_NAME } from './collection.schema';
+import { customKey, officialKey, SCYTHE_KEY, SCYTHE_NAME, siteKey } from './collection.schema';
 import { CollectionService, EMPTY_COLLECTION, UserCollection } from './collection.service';
 import { CustomArchetypesService } from './custom-archetypes.service';
 import { ScytheService } from './scythe.service';
+import { SiteArchetypesService } from './site-archetypes.service';
 
-export type ArchetypeKind = 'official' | 'custom' | 'scythe';
+// site : archétype regroupé par un admin, commun à tous
+export type ArchetypeKind = 'official' | 'site' | 'custom' | 'scythe';
 
 // une tuile de la page d'accueil
 export interface ArchetypeEntry {
@@ -24,10 +26,12 @@ export interface ArchetypeEntry {
   // prix des cartes voulues pas encore possédées
   wantedPrice: number;
   favorite: boolean;
+  // cartes arrivées depuis la dernière ouverture de l'archétype
+  newCount: number;
 }
 
 // carte d'un archétype ; imageId = illustration à afficher (pour "Faux", celle qui a été retenue)
-export type ArchetypeCard = CardDto & { imageId: number };
+export type ArchetypeCard = CardDto & { imageId: number; isNew?: boolean };
 
 export interface ArchetypeDetail {
   key: string;
@@ -39,6 +43,7 @@ export interface ArchetypeDetail {
   // définition d'un archétype perso, pour pouvoir le modifier
   sources?: string[];
   cardIds?: number[];
+  excludedIds?: number[];
 }
 
 const NO_ARCHETYPE = 'Sans archétype';
@@ -51,20 +56,26 @@ export class ArchetypesService {
     private readonly collection: CollectionService,
     private readonly customs: CustomArchetypesService,
     private readonly scythe: ScytheService,
+    private readonly sites: SiteArchetypesService,
   ) {}
 
   // tous les archétypes visibles par l'utilisateur (ou les seuls officiels sans compte), favoris en tête
   async list(userId: string | null) {
-    const [collection, customs, found] = userId
-      ? await Promise.all([this.collection.load(userId), this.customs.list(userId), this.scythe.found(userId)])
-      : [EMPTY_COLLECTION, [], []];
+    const [[collection, customs, found], sites] = await Promise.all([
+      userId ? Promise.all([this.collection.load(userId), this.customs.list(userId), this.scythe.found(userId)]) : ([EMPTY_COLLECTION, [], []] as const),
+      this.sites.list(),
+    ]);
 
-    // un archétype officiel fusionné dans un archétype perso n'apparaît plus seul
-    const merged = new Set(customs.flatMap(custom => custom.archetypes));
+    // un archétype officiel regroupé dans un archétype du site ou perso n'apparaît plus seul
+    const merged = new Set([...sites, ...customs].flatMap(group => group.archetypes));
     const archetypes: ArchetypeEntry[] = [];
     for (const archetype of this.index.archetypes) {
       if (merged.has(archetype.name)) continue;
       archetypes.push(this.entry(officialKey(archetype.name), 'official', archetype.name, archetype.cardIds, archetype.cover, collection));
+    }
+    for (const site of sites) {
+      const cardIds = this.customs.expand(site);
+      archetypes.push(this.entry(siteKey(String(site._id)), 'site', site.name, cardIds, this.defaultCover(cardIds), collection));
     }
     for (const custom of customs) {
       const cardIds = this.customs.expand(custom);
@@ -84,8 +95,21 @@ export class ArchetypesService {
 
   async detail(key: string, userId: string | null): Promise<ArchetypeDetail> {
     const detail = await this.rawDetail(key, userId);
-    const covers = userId ? (await this.collection.load(userId)).covers : EMPTY_COLLECTION.covers;
-    return { ...detail, cover: covers.get(key) ?? detail.cover };
+    if (!userId) return detail;
+    const collection = await this.collection.load(userId);
+    // les cartes arrivées depuis la dernière visite sont signalées une fois, puis l'archétype est marqué comme vu
+    const since = this.newSince(key, collection);
+    const cards = detail.cards.map(card => (this.isNew(card.id, since) ? { ...card, isNew: true } : card));
+    if (cards.some(card => card.isNew)) await this.collection.markSeen(userId, key);
+    return { ...detail, cards, cover: collection.covers.get(key) ?? detail.cover };
+  }
+
+  private newSince(key: string, collection: UserCollection): number {
+    return collection.seen.get(key) ?? collection.since;
+  }
+
+  private isNew(cardId: number, since: number): boolean {
+    return (this.index.cards.get(cardId)?.addedAt ?? 0) > since;
   }
 
   // première carte qui a une illustration recadrée
@@ -100,6 +124,21 @@ export class ArchetypesService {
       if (!archetype) throw new NotFoundException('Archétype introuvable');
       const cards = await this.cards.findByArchetype(archetype.name);
       return { key, kind: 'official', name: archetype.name, cover: archetype.cover, cards: cards.map(card => ({ ...card, imageId: card.images[0] })) };
+    }
+
+    if (key.startsWith('s:')) {
+      const site = await this.sites.require(key.slice(2));
+      const cards = await this.cards.findByIds(this.customs.expand(site));
+      return {
+        key,
+        kind: 'site',
+        name: site.name,
+        cover: this.defaultCover(cards.map(card => card.id)),
+        cards: cards.map(card => ({ ...card, imageId: card.images[0] })),
+        sources: site.archetypes,
+        cardIds: this.index.resolveCardIds(site.cardIds),
+        excludedIds: this.index.resolveCardIds(site.excludedIds ?? []),
+      };
     }
 
     if (!userId) throw new UnauthorizedException('Connexion requise');
@@ -125,6 +164,7 @@ export class ArchetypesService {
         cards: cards.map(card => ({ ...card, imageId: card.images[0] })),
         sources: custom.archetypes,
         cardIds: this.index.resolveCardIds(custom.cardIds),
+        excludedIds: this.index.resolveCardIds(custom.excludedIds ?? []),
       };
     }
     throw new NotFoundException('Archétype introuvable');
@@ -154,7 +194,10 @@ export class ArchetypesService {
     let remainingPrice = 0;
     let wantedPrice = 0;
     let ownedCount = 0;
+    let newCount = 0;
+    const since = this.newSince(key, collection);
     for (const id of cardIds) {
+      if (this.isNew(id, since)) newCount++;
       const price = this.index.cards.get(id)!.price;
       totalPrice += price;
       if (collection.owned.has(id)) {
@@ -175,6 +218,7 @@ export class ArchetypesService {
       remainingPrice: roundPrice(remainingPrice),
       wantedPrice: roundPrice(wantedPrice),
       favorite: collection.favorites.has(key),
+      newCount,
     };
   }
 }

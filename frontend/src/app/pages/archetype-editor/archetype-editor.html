@@ -6,7 +6,7 @@
 
   <div class="flex gap-1 md:hidden">
     <button type="button" class="btn btn-sm flex-1" [class]="tab() == 'search' ? 'bg-white/25' : 'bg-black/25'" (click)="tab.set('search')">Cartes</button>
-    <button type="button" class="btn btn-sm flex-1" [class]="tab() == 'selection' ? 'bg-white/25' : 'bg-black/25'" (click)="tab.set('selection')">Sélection ({{ cards().length }})</button>
+    <button type="button" class="btn btn-sm flex-1" [class]="tab() == 'selection' ? 'bg-white/25' : 'bg-black/25'" (click)="tab.set('selection')">Sélection ({{ allCards().length }})</button>
   </div>
 
   <!-- comme l'ancienne version : toutes les cartes à gauche, la carte survolée en grand au milieu, la sélection à droite -->
@@ -22,7 +22,7 @@
 
     <section class="panel min-h-0 flex-col p-3 md:flex md:w-72 md:shrink-0" [class.hidden]="tab() != 'selection'" [class.flex]="tab() == 'selection'">
       <h2 class="mb-1 font-medium">Cartes de l'archétype</h2>
-      <p class="mb-2 text-xs text-white/60">{{ cards().length }} carte(s) · {{ formatPrice(totalPrice()) }} — clique une carte pour l'ajouter ou la retirer</p>
+      <p class="mb-2 text-xs text-white/60">{{ allCards().length }} carte(s) · {{ formatPrice(totalPrice()) }} — clique une carte pour l'ajouter ou la retirer</p>
       @if (sources().length) {
         <p class="mb-1 text-xs text-white/60 uppercase">Archétypes regroupés</p>
         <div class="mb-3 flex flex-wrap gap-1">
@@ -35,10 +35,15 @@
         </div>
       }
       <ul class="min-h-0 flex-1 overflow-y-auto">
-        @for (card of cards(); track card.id) {
+        @for (card of allCards(); track card.id) {
           <li class="mb-1 flex items-center gap-2 rounded bg-sunken p-1 pr-2" (mouseenter)="preview.set(card)">
             <img (click)="zoomed.set(card)" [src]="imgUrl('small', card.images[0])" alt="" class="card-ratio w-9 cursor-zoom-in rounded">
-            <span class="min-w-0 flex-1 truncate text-sm">{{ prefs.cardName(card) }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm">
+              {{ prefs.cardName(card) }}
+              @if (card.archetype && sources().includes(card.archetype)) {
+                <span class="block truncate text-xs text-white/45">{{ card.archetype }}</span>
+              }
+            </span>
             <button type="button" class="btn btn-sm btn-dark" (click)="removeCard(card)" title="Retirer"><i class="bi bi-x-lg"></i></button>
           </li>
         } @empty {
@@ -47,9 +52,19 @@
       </ul>
       <div class="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
         <input class="input" placeholder="Nom de l'archétype..." maxlength="60" [(ngModel)]="name" (keydown.enter)="save()">
+        @if (auth.user()?.admin && !editKey()) {
+          <label class="flex cursor-pointer items-center gap-2 text-sm" title="Archétype du site : visible et mis à jour pour tous les comptes">
+            <input type="checkbox" [(ngModel)]="forEveryone"> <i class="bi bi-globe2 text-amber-400"></i> Pour tout le monde (admin)
+          </label>
+        }
         <button type="button" class="btn btn-primary" [disabled]="saving() || loading()" (click)="save()">
           <i class="bi bi-check-lg"></i> {{ editKey() ? 'Enregistrer' : 'Créer' }}
         </button>
+        @if (editKey()) {
+          <button type="button" class="cursor-pointer self-center text-xs text-white/50 hover:text-red-300 hover:underline" (click)="remove()">
+            <i class="bi bi-trash"></i> Supprimer cet archétype
+          </button>
+        }
       </div>
     </section>
   </div>
@@ -58,9 +73,16 @@
 @if (zoomed(); as card) {
   <app-card-zoom [card]="card" (close)="zoomed.set(null)">
     @if (card.archetype) {
-      <button type="button" class="btn btn-box" (click)="search.exploreArchetype(card.archetype!); tab.set('search'); zoomed.set(null)">
-        <i class="bi bi-diagram-3"></i> Explorer l'archétype {{ card.archetype }}
-      </button>
+      <div class="flex gap-2">
+        <button type="button" class="btn btn-box flex-1" (click)="search.exploreArchetype(card.archetype!); tab.set('search'); zoomed.set(null)">
+          <i class="bi bi-diagram-3"></i> Explorer {{ card.archetype }}
+        </button>
+        @if (!sources().includes(card.archetype!)) {
+          <button type="button" class="btn btn-box flex-1" (click)="addSource(card.archetype!); zoomed.set(null)" title="Regroupe tout l'archétype, y compris ses futures cartes">
+            <i class="bi bi-collection"></i> Ajouter tout {{ card.archetype }}
+          </button>
+        }
+      </div>
     }
     @if (cardIds().has(card.id)) {
       <button type="button" class="btn btn-box" (click)="toggle(card); zoomed.set(null)"><i class="bi bi-dash-lg"></i> Retirer de l'archétype</button>

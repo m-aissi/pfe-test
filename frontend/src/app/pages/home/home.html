@@ -38,9 +38,16 @@
           (click)="toggleFavorite(archetype, $event)" (keydown.enter)="$event.stopPropagation()">
           <i class="bi" [class.bi-star-fill]="archetype.favorite" [class.text-amber-400]="archetype.favorite" [class.bi-star]="!archetype.favorite"></i>
         </button>
-        @if (archetype.kind != 'official') {
-          <span class="absolute top-1.5 left-1.5 rounded bg-primary/80 px-1.5 py-0.5 text-xs">{{ archetype.kind == 'scythe' ? 'Chasse aux faux' : 'Perso' }}</span>
-        }
+        <span class="absolute top-1.5 left-1.5 flex gap-1">
+          @if (archetype.newCount) {
+            <span class="animate-pulse rounded bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-black shadow" [title]="archetype.newCount + ' nouvelle(s) carte(s) depuis ta dernière visite'">
+              NEW +{{ archetype.newCount }}
+            </span>
+          }
+          @if (archetype.kind == 'custom' || archetype.kind == 'scythe') {
+            <span class="rounded bg-primary/80 px-1.5 py-0.5 text-xs">{{ archetype.kind == 'scythe' ? 'Chasse aux faux' : 'Perso' }}</span>
+          }
+        </span>
         <span class="relative mt-auto w-full bg-black/55 px-2.5 py-2 transition-colors group-hover:bg-black/70">
           <span class="block truncate text-lg font-medium sm:text-xl">{{ archetype.name }}</span>
           <span class="mt-1 flex items-center gap-3 text-sm">

@@ -10,9 +10,20 @@ export interface UserCollection {
   favorites: Set<string>;
   // clé d'archétype -> illustration de couverture choisie
   covers: Map<string, number>;
+  // clé d'archétype -> dernière ouverture (ms)
+  seen: Map<string, number>;
+  // avant cette date (création du compte), aucune carte n'est "nouvelle" ; Infinity sans compte
+  since: number;
 }
 
-export const EMPTY_COLLECTION: UserCollection = { owned: new Set(), wanted: new Set(), favorites: new Set(), covers: new Map() };
+export const EMPTY_COLLECTION: UserCollection = {
+  owned: new Set(),
+  wanted: new Set(),
+  favorites: new Set(),
+  covers: new Map(),
+  seen: new Map(),
+  since: Infinity,
+};
 
 @Injectable()
 export class CollectionService {
@@ -29,6 +40,9 @@ export class CollectionService {
       wanted: new Set(this.index.resolveCardIds(doc?.wanted ?? [])),
       favorites: new Set(doc?.favorites ?? []),
       covers: new Map((doc?.covers ?? []).filter(cover => this.index.artworkToCard.has(cover.imageId)).map(cover => [cover.key, cover.imageId])),
+      seen: new Map((doc?.seen ?? []).map(entry => [entry.key, new Date(entry.at).getTime()])),
+      // l'identifiant Mongo du compte contient sa date de création
+      since: new Types.ObjectId(userId).getTimestamp().getTime(),
     };
   }
 
@@ -48,7 +62,7 @@ export class CollectionService {
     const valid =
       key == SCYTHE_KEY ||
       (key.startsWith('a:') && this.index.archetypeByName.has(key.slice(2))) ||
-      (key.startsWith('c:') && Types.ObjectId.isValid(key.slice(2)));
+      ((key.startsWith('c:') || key.startsWith('s:')) && Types.ObjectId.isValid(key.slice(2)));
     if (!valid) throw new BadRequestException('Archétype inconnu');
   }
 
@@ -63,6 +77,22 @@ export class CollectionService {
     if (imageId !== null && !this.index.artworkToCard.has(imageId)) throw new BadRequestException('Illustration inconnue');
     await this.model.updateOne({ userId }, { $pull: { covers: { key } } }, { upsert: true });
     if (imageId !== null) await this.model.updateOne({ userId }, { $push: { covers: { key, imageId } } });
+  }
+
+  async markSeen(userId: string, key: string) {
+    await this.model.updateOne({ userId }, { $pull: { seen: { key } } }, { upsert: true });
+    await this.model.updateOne({ userId }, { $push: { seen: { key, at: new Date() } } });
+  }
+
+  // un archétype perso devenu archétype du site garde son favori, sa couverture et son suivi des nouveautés
+  async renameKey(userId: string, from: string, to: string) {
+    const doc = await this.model.findOne({ userId });
+    if (!doc) return;
+    doc.favorites = doc.favorites.map(key => (key == from ? to : key));
+    for (const list of [doc.covers, doc.seen]) for (const entry of list) if (entry.key == from) entry.key = to;
+    doc.markModified('covers');
+    doc.markModified('seen');
+    await doc.save();
   }
 
   async removeFavorites(userId: string, keys: string[]) {

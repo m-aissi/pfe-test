@@ -36,6 +36,11 @@
         }
       </ul>
       <input class="input" placeholder="Nom du nouvel archétype..." maxlength="60" [(ngModel)]="name">
+      @if (auth.user()?.admin) {
+        <label class="flex cursor-pointer items-center gap-2 text-sm" title="Archétype du site : visible et mis à jour pour tous les comptes">
+          <input type="checkbox" [ngModel]="forEveryone()" (ngModelChange)="setForEveryone($event)"> <i class="bi bi-globe2 text-amber-400"></i> Pour tout le monde (admin)
+        </label>
+      }
       <button type="button" class="btn btn-primary" [disabled]="saving() || selected().length < 2" (click)="merge()"><i class="bi bi-union"></i> Fusionner</button>
     </section>
   </div>
