@@ -23,4 +23,4 @@ export function env() {
   };
 }
 
-export const USER_AGENT = 'YGOTools (yugioh.miroirdesreves.com)';
+export const USER_AGENT = 'KuribOhrganizer (yugioh.miroirdesreves.com)';

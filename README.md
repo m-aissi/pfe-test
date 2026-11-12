@@ -1,4 +1,4 @@
-# YGO Tools
+# KuribOhrganizer
 
 Suivi de collection Yu-Gi-Oh! : archétypes, cartes possédées et voulues, archétypes perso, classeurs virtuels de 9 cases et chasse aux faux. En ligne sur https://yugioh.miroirdesreves.com.
 
