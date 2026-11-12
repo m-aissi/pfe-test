@@ -1,4 +1,5 @@
 import { Component, computed, effect, HostListener, inject, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Api, ArchetypeCard, ArchetypeDetail, Card } from '../../core/api';
 import { Auth } from '../../core/auth';
@@ -6,12 +7,13 @@ import { CollectionStore } from '../../core/collection';
 import { Prefs } from '../../core/prefs';
 import { Toasts } from '../../core/toast';
 import { copyText, formatPrice, imgUrl, roundPrice, typeLine } from '../../core/util';
+import { CardZoom } from '../../shared/card-zoom';
 
 type Filter = 'all' | 'missing' | 'owned' | 'wanted';
 
 @Component({
   selector: 'app-archetype',
-  imports: [RouterLink],
+  imports: [RouterLink, NgTemplateOutlet, CardZoom],
   templateUrl: './archetype.html',
 })
 export class Archetype {
@@ -30,8 +32,8 @@ export class Archetype {
   readonly notFound = signal(false);
   readonly filter = signal<Filter>('all');
   readonly selected = signal<ArchetypeCard | null>(null);
-  // sur téléphone, l'aperçu s'ouvre par-dessus la liste
-  readonly previewOpen = signal(false);
+  // carte affichée en plein écran (clic sur l'aperçu, ou toucher une carte sur téléphone)
+  readonly zoomOpen = signal(false);
   // texte complet des cartes, chargé à la demande
   private readonly descriptions = signal(new Map<number, Card>());
 
@@ -104,7 +106,8 @@ export class Archetype {
 
   select(card: ArchetypeCard) {
     this.selected.set(card);
-    if (window.matchMedia('(width < 64rem)').matches) this.previewOpen.set(true);
+    // sans colonne d'aperçu (téléphone, tablette), la carte s'ouvre directement en grand
+    if (window.matchMedia('(width < 64rem)').matches) this.zoomOpen.set(true);
   }
 
   // carte suivante / précédente dans la liste affichée (flèches du clavier ou de l'aperçu)
@@ -117,16 +120,22 @@ export class Archetype {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    if ((event.target as HTMLElement).tagName == 'INPUT') return;
+    // la vue plein écran gère elle-même ses touches
+    if (this.zoomOpen() || (event.target as HTMLElement).tagName == 'INPUT') return;
     if (event.key == 'ArrowRight') this.step(1);
     else if (event.key == 'ArrowLeft') this.step(-1);
-    else if (event.key == 'Escape') this.previewOpen.set(false);
   }
 
   async wantAll() {
     const owned = this.collection.owned();
     const ids = this.visible().filter((card) => !owned.has(card.id)).map((card) => card.id);
     if (ids.length && (await this.collection.setWanted(ids, true))) this.toasts.success(`${ids.length} cartes ajoutées aux voulues`);
+  }
+
+  async unwantAll() {
+    const wanted = this.collection.wanted();
+    const ids = this.visible().filter((card) => wanted.has(card.id)).map((card) => card.id);
+    if (ids.length && (await this.collection.setWanted(ids, false))) this.toasts.success(`${ids.length} cartes retirées des voulues`);
   }
 
   async copyList() {

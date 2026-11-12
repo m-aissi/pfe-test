@@ -9,6 +9,23 @@
     </button>
   </div>
 
+  <div class="-mx-0.5 flex gap-1 overflow-x-auto px-0.5 pb-0.5 [scrollbar-width:none]">
+    @for (option of sorts; track option.value) {
+      <button type="button" class="btn btn-sm shrink-0 rounded-full whitespace-nowrap" [class]="sort() == option.value ? 'bg-primary' : 'bg-black/25 hover:bg-black/40'"
+        (click)="setSort(option.value)" [title]="option.value == 'random' && sort() == 'random' ? 'Remélanger' : option.label">
+        <i class="bi" [class]="option.value == 'random' && sort() == 'random' ? 'bi-arrow-repeat' : option.icon"></i> {{ option.label }}
+      </button>
+    }
+  </div>
+
+  @if (archetype()) {
+    <div class="flex items-center gap-2 rounded-md bg-primary/25 px-2 py-1 text-sm">
+      <i class="bi bi-diagram-3"></i>
+      <span class="min-w-0 flex-1 truncate">Archétype : <b>{{ archetype() }}</b> · {{ total() }} cartes</span>
+      <button type="button" class="cursor-pointer px-1" (click)="clearArchetype()" title="Quitter l'archétype"><i class="bi bi-x-lg"></i></button>
+    </div>
+  }
+
   @if (showFilters()) {
     <div class="grid grid-cols-2 gap-1.5 rounded-md bg-black/25 p-2 text-sm">
       <select class="input col-span-2" [(ngModel)]="filters.type" (ngModelChange)="search(0)">
@@ -31,7 +48,7 @@
         <input class="input px-2" type="number" min="0" inputmode="numeric" placeholder="Échelle" [(ngModel)]="filters.scale" (ngModelChange)="onChange()">
       </div>
       <label class="col-span-2 flex items-center gap-2">
-        <input type="checkbox" [(ngModel)]="filters.inDesc" (ngModelChange)="search(0)"> Chercher aussi dans le texte des cartes
+        <input type="checkbox" [(ngModel)]="filters.namesOnly" (ngModelChange)="search(0)"> Noms seulement (ignorer le texte des cartes)
       </label>
       @if (activeFilters()) {
         <button type="button" class="btn btn-sm btn-dark col-span-2" (click)="resetFilters()">Effacer les filtres</button>
@@ -39,17 +56,17 @@
     </div>
   }
 
-  <div class="min-h-0 flex-1 overflow-y-auto">
+  <div #scroller class="min-h-0 flex-1 overflow-y-auto">
     @if (!loading() && !items().length) {
       <p class="p-3 text-center text-sm text-white/55">
-        {{ query().trim() || activeFilters() ? 'Aucune carte trouvée' : 'Tape un nom de carte ou choisis un filtre' }}
+        {{ query().trim() || activeFilters() || archetype() || browseAll() ? 'Aucune carte trouvée' : 'Tape un nom de carte ou choisis un filtre' }}
       </p>
     }
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(5.25rem,1fr))] gap-1.5 p-0.5">
+    <div class="grid gap-1.5 p-0.5" [style.grid-template-columns]="'repeat(auto-fill, minmax(' + tileSize() + ', 1fr))'">
       @for (item of items(); track item.imageId) {
         <div class="group relative cursor-pointer rounded" [class.ring-3]="item.imageId == selectedImageId()" [class.ring-primary]="item.imageId == selectedImageId()"
           [title]="prefs.cardName(item.card) + ' · ' + formatPrice(item.card.price)" [attr.draggable]="draggable() ? 'true' : null"
-          (dragstart)="onDragStart(item, $event)" (dragend)="dragEnd.emit()" (click)="pick.emit(item)">
+          (dragstart)="onDragStart(item, $event)" (dragend)="dragEnd.emit()" (click)="pick.emit(item)" (mouseenter)="hover.emit(item)">
           <img [src]="imgUrl('small', item.imageId)" [alt]="prefs.cardName(item.card)" loading="lazy" class="card-ratio pointer-events-none block w-full rounded bg-black/30">
           @if (markedCardIds().has(item.card.id)) {
             <i class="bi bi-check-circle-fill absolute top-0.5 left-1 text-lg text-owned drop-shadow"></i>
@@ -57,12 +74,14 @@
           @if (quickLabel()) {
             <button type="button" class="absolute top-0 right-0 rounded-bl rounded-tr bg-black/65 px-1.5 py-0.5 md:hidden md:group-hover:block" [title]="quickLabel()"
               (click)="$event.stopPropagation(); quick.emit(item)">
-              <i class="bi bi-plus-lg"></i>
+              <i class="bi" [class]="quickIcon()"></i>
             </button>
           }
         </div>
       }
     </div>
+    <!-- repère du défilement infini ; le bouton reste en secours -->
+    <div #sentinel></div>
     @if (loading()) {
       <p class="p-3 text-center"><i class="bi bi-arrow-repeat inline-block animate-spin"></i></p>
     } @else if (hasMore()) {

@@ -26,6 +26,9 @@
         @if (auth.user()) {
           <span class="flex gap-2 sm:ml-auto">
             <button type="button" class="btn btn-sm btn-box" (click)="wantAll()"><i class="bi bi-heart-fill text-wanted"></i> Tout vouloir</button>
+            @if (s.wanted) {
+              <button type="button" class="btn btn-sm btn-box" (click)="unwantAll()"><i class="bi bi-heart"></i> Plus rien vouloir</button>
+            }
             <button type="button" class="btn btn-sm btn-primary" (click)="copyList()"><i class="bi bi-clipboard"></i> Copier les voulues</button>
           </span>
         } @else {
@@ -67,48 +70,51 @@
       </div>
     </section>
 
-    <!-- aperçu : colonne fixe sur grand écran, fenêtre par-dessus sur téléphone et tablette -->
+    <!-- aperçu : colonne fixe sur grand écran ; un clic sur l'image (ou toucher une carte sur téléphone) l'ouvre en plein écran -->
     @if (selected(); as card) {
-      <aside class="fixed inset-0 z-50 flex-col overflow-y-auto bg-black/95 p-4 lg:sticky lg:inset-auto lg:top-[calc(var(--top-bar)+1rem)] lg:z-auto lg:flex lg:max-h-[calc(100dvh-var(--top-bar)-2rem)] lg:w-96 lg:shrink-0 lg:rounded-lg lg:bg-surface"
-        [class.flex]="previewOpen()" [class.hidden]="!previewOpen()" (click)="previewOpen.set(false)">
-        <div class="mx-auto flex w-full max-w-sm flex-col gap-3" (click)="$event.stopPropagation()">
-          <div class="flex items-center gap-2 lg:hidden">
-            <button type="button" class="btn btn-sm btn-dark" (click)="step(-1)"><i class="bi bi-chevron-left"></i></button>
-            <button type="button" class="btn btn-sm btn-dark" (click)="step(1)"><i class="bi bi-chevron-right"></i></button>
-            <button type="button" class="btn btn-sm btn-dark ml-auto" (click)="previewOpen.set(false)"><i class="bi bi-x-lg"></i></button>
-          </div>
-          <!-- hauteur limitée sur téléphone pour garder les boutons à l'écran -->
-          <img [src]="imgUrl('cards', card.imageId)" [alt]="prefs.cardName(card)" class="card-ratio mx-auto max-h-[52dvh] max-w-full rounded-md bg-black/30 lg:max-h-none lg:w-full">
-          <div>
-            <h2 class="text-lg font-medium">{{ prefs.cardName(card) }}</h2>
-            @if (prefs.language() == 'fr' && card.nameFr) {
-              <p class="text-sm text-white/55">{{ card.name }}</p>
-            }
-            <p class="mt-1 text-sm text-white/80">
-              {{ typeLine(card) }}
-              @if (card.attribute) { · {{ card.attribute }} }
-              @if (card.level) { · Niv. {{ card.level }} }
-              @if (card.linkval) { · Link {{ card.linkval }} }
-              @if (card.scale !== undefined) { · Échelle {{ card.scale }} }
-            </p>
-            @if (card.atk !== undefined) {
-              <p class="text-sm">ATK {{ card.atk }}@if (card.def !== undefined) { / DEF {{ card.def }}}</p>
-            }
-            <p class="mt-1 text-sm">Cardmarket : {{ formatPrice(card.price) }}</p>
-          </div>
-          <div class="flex gap-2">
-            <button type="button" class="btn flex-1" [class]="collection.owned().has(card.id) ? 'bg-green-700' : 'btn-box'" (click)="collection.toggleOwned(card.id)">
-              <i class="bi bi-postage-fill"></i> {{ collection.owned().has(card.id) ? 'Possédée' : 'Je l\'ai' }}
-            </button>
-            <button type="button" class="btn flex-1" [class]="collection.wanted().has(card.id) ? 'bg-rose-700' : 'btn-box'" (click)="collection.toggleWanted(card.id)">
-              <i class="bi bi-heart-fill"></i> {{ collection.wanted().has(card.id) ? 'Voulue' : 'Je la veux' }}
-            </button>
-          </div>
-          @if (selectedDescription(); as text) {
-            <p class="text-sm leading-relaxed whitespace-pre-line text-white/85">{{ text }}</p>
+      <aside class="sticky top-[calc(var(--top-bar)+1rem)] hidden max-h-[calc(100dvh-var(--top-bar)-2rem)] w-96 shrink-0 flex-col gap-3 overflow-y-auto rounded-lg bg-surface p-4 lg:flex">
+        <button type="button" class="cursor-zoom-in" (click)="zoomOpen.set(true)" title="Voir en grand">
+          <img [src]="imgUrl('cards', card.imageId)" [alt]="prefs.cardName(card)" class="card-ratio w-full rounded-md bg-black/30 transition hover:brightness-110">
+        </button>
+        <div>
+          <h2 class="text-lg font-medium">{{ prefs.cardName(card) }}</h2>
+          @if (prefs.language() == 'fr' && card.nameFr) {
+            <p class="text-sm text-white/55">{{ card.name }}</p>
           }
+          <p class="mt-1 text-sm text-white/80">
+            {{ typeLine(card) }}
+            @if (card.attribute) { · {{ card.attribute }} }
+            @if (card.level) { · Niv. {{ card.level }} }
+            @if (card.linkval) { · Link {{ card.linkval }} }
+            @if (card.scale !== undefined) { · Échelle {{ card.scale }} }
+          </p>
+          @if (card.atk !== undefined) {
+            <p class="text-sm">ATK {{ card.atk }}@if (card.def !== undefined) { / DEF {{ card.def }}}</p>
+          }
+          <p class="mt-1 text-sm">Cardmarket : {{ formatPrice(card.price) }}</p>
         </div>
+        <ng-container *ngTemplateOutlet="flags; context: { $implicit: card }" />
+        @if (selectedDescription(); as text) {
+          <p class="text-sm leading-relaxed whitespace-pre-line text-white/85">{{ text }}</p>
+        }
       </aside>
+
+      @if (zoomOpen()) {
+        <app-card-zoom [card]="card" [imageId]="card.imageId" [description]="selectedDescription() ?? null" (close)="zoomOpen.set(false)" (step)="step($event)">
+          <ng-container *ngTemplateOutlet="flags; context: { $implicit: card }" />
+        </app-card-zoom>
+      }
     }
+
+    <ng-template #flags let-card>
+      <div class="flex gap-2">
+        <button type="button" class="btn flex-1" [class]="collection.owned().has(card.id) ? 'bg-green-700' : 'btn-box'" (click)="collection.toggleOwned(card.id)">
+          <i class="bi bi-postage-fill"></i> {{ collection.owned().has(card.id) ? 'Possédée' : 'Je l\'ai' }}
+        </button>
+        <button type="button" class="btn flex-1" [class]="collection.wanted().has(card.id) ? 'bg-rose-700' : 'btn-box'" (click)="collection.toggleWanted(card.id)">
+          <i class="bi bi-heart-fill"></i> {{ collection.wanted().has(card.id) ? 'Voulue' : 'Je la veux' }}
+        </button>
+      </div>
+    </ng-template>
   </div>
 }

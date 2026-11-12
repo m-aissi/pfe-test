@@ -5,11 +5,13 @@ import { Api, ArchetypeDetail, Card } from '../../core/api';
 import { Prefs } from '../../core/prefs';
 import { Toasts } from '../../core/toast';
 import { formatPrice, imgUrl } from '../../core/util';
-import { CardSearch, SearchItem } from '../../shared/card-search';
+import { CardPreview } from '../../shared/card-preview';
+import { CardZoom } from '../../shared/card-zoom';
+import { CardSearch } from '../../shared/card-search';
 
 @Component({
   selector: 'app-archetype-editor',
-  imports: [FormsModule, RouterLink, CardSearch],
+  imports: [FormsModule, RouterLink, CardSearch, CardPreview, CardZoom],
   templateUrl: './archetype-editor.html',
 })
 export class ArchetypeEditor {
@@ -31,6 +33,10 @@ export class ArchetypeEditor {
   readonly cards = signal<Card[]>([]);
   // sur téléphone : onglet recherche ou onglet sélection
   readonly tab = signal<'search' | 'selection'>('search');
+  // carte affichée en grand dans la colonne du milieu (dernière survolée)
+  readonly preview = signal<Card | null>(null);
+  // carte affichée en plein écran
+  readonly zoomed = signal<Card | null>(null);
 
   readonly cardIds = computed(() => new Set(this.cards().map((card) => card.id)));
   readonly totalPrice = computed(() => this.cards().reduce((sum, card) => sum + card.price, 0));
@@ -54,10 +60,9 @@ export class ArchetypeEditor {
     }
   }
 
-  // clic sur un résultat : ajoute la carte, ou la retire si elle y est déjà
-  toggle(item: SearchItem) {
-    if (this.cardIds().has(item.card.id)) this.removeCard(item.card);
-    else this.cards.update((cards) => [...cards, item.card].sort((a, b) => a.name.localeCompare(b.name)));
+  toggle(card: Card) {
+    if (this.cardIds().has(card.id)) this.removeCard(card);
+    else this.cards.update((cards) => [...cards, card].sort((a, b) => a.name.localeCompare(b.name)));
   }
 
   removeCard(card: Card) {

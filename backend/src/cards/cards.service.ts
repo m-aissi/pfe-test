@@ -38,9 +38,15 @@ export interface SearchParams {
   level?: number;
   link?: number;
   scale?: number;
+  archetype?: string;
+  // ordre : pertinence / nom (défaut), sorties récentes, au hasard (graine stable pour paginer), prix
+  sort?: SearchSort;
+  seed?: number;
   page: number;
   limit: number;
 }
+
+export type SearchSort = 'name' | 'new' | 'random' | 'price' | 'price-desc';
 
 export interface SearchResult {
   items: CardDto[];
@@ -77,7 +83,7 @@ export class CardsService {
     return docs.map(doc => this.toDto(doc));
   }
 
-  // recherche par nom français ou anglais, les noms qui commencent par la recherche d'abord
+  // recherche par nom français ou anglais (et texte des cartes si inDesc)
   async search(params: SearchParams): Promise<SearchResult> {
     const match: Record<string, any> = {};
     const query = normalize(params.q ?? '');
@@ -97,15 +103,40 @@ export class CardsService {
     if (params.level !== undefined) match.level = { $gte: params.level };
     if (params.link !== undefined) match.linkval = { $gte: params.link };
     if (params.scale !== undefined) match.scale = { $gte: params.scale };
+    if (params.archetype) match.archetype = params.archetype;
 
-    const startsWith = (field: string) => ({ $regexMatch: { input: { $ifNull: [field, ''] }, regex: `^${pattern}` } });
+    // classement : nom qui commence par la recherche, puis nom qui la contient, puis cartes trouvées par leur texte
+    const nameMatches = (regex: string) => ({
+      $or: ['$nameSearch', '$nameFrSearch'].map(field => ({ $regexMatch: { input: { $ifNull: [field, ''] }, regex } })),
+    });
+    const rank = query ? { $switch: { branches: [{ case: nameMatches(`^${pattern}`), then: 0 }, { case: nameMatches(pattern), then: 1 }], default: 2 } } : 0;
+    const fields: Record<string, any> = { rank };
+    let sort: Record<string, 1 | -1> = { rank: 1, nameSearch: 1 };
+    switch (params.sort) {
+      case 'new':
+        // les cartes sans date de sortie TCG (OCG seulement) passent après
+        fields.order = { $ifNull: ['$tcgDate', ''] };
+        sort = { order: -1, nameSearch: 1 };
+        break;
+      case 'random':
+        // mélange déterministe : la même graine redonne le même ordre, page après page
+        fields.order = { $mod: [{ $multiply: [{ $mod: [{ $multiply: ['$_id', params.seed ?? 1] }, 2147483647] }, 48271] }, 2147483647] };
+        sort = { order: 1, _id: 1 };
+        break;
+      case 'price':
+        sort = { price: 1, nameSearch: 1 };
+        break;
+      case 'price-desc':
+        sort = { price: -1, nameSearch: 1 };
+        break;
+    }
     const pipeline: PipelineStage[] = [
       { $match: match },
-      { $addFields: { rank: query ? { $cond: [{ $or: [startsWith('$nameSearch'), startsWith('$nameFrSearch')] }, 0, 1] } : 0 } },
-      { $sort: { rank: 1, nameSearch: 1 } },
+      { $addFields: fields },
+      { $sort: sort },
       {
         $facet: {
-          items: [{ $skip: params.page * params.limit }, { $limit: params.limit }, { $project: { ...INTERNAL_FIELDS, rank: 0 } }],
+          items: [{ $skip: params.page * params.limit }, { $limit: params.limit }, { $project: { ...INTERNAL_FIELDS, rank: 0, order: 0 } }],
           total: [{ $count: 'count' }],
         },
       },

@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { CardsSyncService } from './cards-sync.service';
 import { CardsIndex } from './cards.index';
-import { CardsService } from './cards.service';
+import { CardsService, SearchSort } from './cards.service';
 
 class SearchQuery {
   @IsOptional() @IsString() @MaxLength(100)
@@ -36,6 +36,15 @@ class SearchQuery {
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(0)
   scale?: number;
+
+  @IsOptional() @IsString() @MaxLength(100)
+  archetype?: string;
+
+  @IsOptional() @IsIn(['name', 'new', 'random', 'price', 'price-desc'])
+  sort?: SearchSort;
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(2_000_000)
+  seed?: number;
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(0)
   page: number = 0;
