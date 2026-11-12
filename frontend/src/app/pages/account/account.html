@@ -1,0 +1,70 @@
+@if (auth.user(); as user) {
+  <div class="mx-auto flex max-w-xl flex-col gap-4 p-3 sm:p-4">
+    <div class="flex items-center gap-2">
+      <h1 class="mr-auto text-xl font-medium">Mon compte</h1>
+      <button type="button" class="btn btn-box" (click)="auth.logout()"><i class="bi bi-box-arrow-right"></i> Déconnexion</button>
+    </div>
+
+    <section class="panel flex flex-col gap-2">
+      <h2 class="font-medium">Pseudo</h2>
+      <form class="flex gap-2" (ngSubmit)="rename()">
+        <input class="input" name="username" autocapitalize="none" [(ngModel)]="username">
+        <button type="submit" class="btn btn-box" [disabled]="username().trim() == user.username">Modifier</button>
+      </form>
+    </section>
+
+    <section class="panel flex flex-col gap-2">
+      <h2 class="font-medium">{{ user.hasPassword ? 'Changer de mot de passe' : 'Définir un mot de passe' }}</h2>
+      @if (!user.hasPassword) {
+        <p class="text-sm text-white/65">Ton compte passe par Google ou Discord. Un mot de passe te permet aussi de te connecter avec ton pseudo.</p>
+      }
+      <form class="flex flex-col gap-2" (ngSubmit)="changePassword()">
+        <input type="text" name="username" autocomplete="username" [value]="user.username" class="hidden" readonly>
+        @if (user.hasPassword) {
+          <input class="input" type="password" name="current" autocomplete="current-password" placeholder="Mot de passe actuel" [(ngModel)]="currentPassword">
+        }
+        <input class="input" type="password" name="new" autocomplete="new-password" placeholder="Nouveau mot de passe (4 caractères minimum)" [(ngModel)]="newPassword">
+        <button type="submit" class="btn btn-box self-start" [disabled]="newPassword().length < 4">Enregistrer</button>
+      </form>
+    </section>
+
+    @if (auth.providers().google || auth.providers().discord) {
+      <section class="panel flex flex-col gap-2">
+        <h2 class="font-medium">Comptes liés</h2>
+        <p class="text-sm text-white/65">Pour te connecter en un clic sur ce compte.</p>
+        @if (auth.providers().google) {
+          <div class="flex items-center gap-2">
+            <i class="bi bi-google"></i> Google
+            @if (user.google) { <span class="ml-auto text-sm text-owned"><i class="bi bi-check-lg"></i> Lié</span> }
+            @else { <a href="/api/auth/oauth/google" class="btn btn-sm btn-box ml-auto">Lier</a> }
+          </div>
+        }
+        @if (auth.providers().discord) {
+          <div class="flex items-center gap-2">
+            <i class="bi bi-discord"></i> Discord
+            @if (user.discord) { <span class="ml-auto text-sm text-owned"><i class="bi bi-check-lg"></i> Lié</span> }
+            @else { <a href="/api/auth/oauth/discord" class="btn btn-sm btn-box ml-auto">Lier</a> }
+          </div>
+        }
+      </section>
+    }
+
+    <section class="panel flex flex-col gap-2">
+      <h2 class="font-medium">Importer depuis l'ancien site</h2>
+      <p class="text-sm text-white/65">
+        Choisis ton fichier <b>YGOToolsProfile.json</b> (bouton « Export » avec le bonhomme) ou <b>YGOToolsBinders.json</b> (export des classeurs).
+        Tes cartes possédées, voulues, favoris et archétypes créés sont ajoutés à ton compte, sans rien effacer.
+      </p>
+      <label class="btn btn-box self-start" [class.opacity-50]="importing()">
+        <i class="bi bi-upload"></i> Choisir un fichier
+        <input #file type="file" accept=".json,application/json" class="hidden" [disabled]="importing()" (change)="importFile(file)">
+      </label>
+    </section>
+
+    <section class="panel flex flex-col gap-2 border border-red-900/60">
+      <h2 class="font-medium">Supprimer mon compte</h2>
+      <p class="text-sm text-white/65">Efface définitivement ton compte, tes cartes cochées, tes archétypes, tes classeurs et ta chasse aux faux.</p>
+      <button type="button" class="btn btn-danger self-start" (click)="deleteAccount()">Supprimer mon compte</button>
+    </section>
+  </div>
+}

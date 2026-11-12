@@ -1,0 +1,114 @@
+@if (notFound()) {
+  <div class="p-8 text-center">
+    <p class="mb-4 text-white/70">Archétype introuvable.</p>
+    <a routerLink="/" class="btn btn-box">Retour aux archétypes</a>
+  </div>
+} @else if (!detail()) {
+  <p class="p-8 text-center text-white/60"><i class="bi bi-arrow-repeat inline-block animate-spin"></i> Chargement...</p>
+} @else {
+  @let archetype = detail()!;
+  @let s = stats();
+  <div class="mx-auto flex max-w-[110rem] gap-4 p-3 sm:p-4">
+    <section class="min-w-0 flex-1">
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <a routerLink="/" class="btn btn-sm btn-dark" title="Retour"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="mr-2 truncate text-xl font-medium sm:text-2xl">{{ archetype.name }}</h1>
+        @if (archetype.kind == 'custom') {
+          <button type="button" class="btn btn-sm btn-box" (click)="edit()"><i class="bi bi-pencil"></i> Modifier</button>
+          <button type="button" class="btn btn-sm btn-box" (click)="remove()" title="Supprimer"><i class="bi bi-trash"></i></button>
+        }
+      </div>
+
+      <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <span title="Cartes possédées">{{ s.owned }}/{{ s.total }} <i class="bi bi-postage-fill"></i></span>
+        <span title="Prix des cartes pas encore possédées">À acheter : {{ formatPrice(s.remainingPrice) }}</span>
+        <span title="Prix des cartes voulues pas encore possédées">{{ formatPrice(s.wantedPrice) }} <i class="bi bi-heart-fill text-wanted"></i></span>
+        @if (auth.user()) {
+          <span class="flex gap-2 sm:ml-auto">
+            <button type="button" class="btn btn-sm btn-box" (click)="wantAll()"><i class="bi bi-heart-fill text-wanted"></i> Tout vouloir</button>
+            <button type="button" class="btn btn-sm btn-primary" (click)="copyList()"><i class="bi bi-clipboard"></i> Copier les voulues</button>
+          </span>
+        } @else {
+          <a [routerLink]="'/connexion'" class="text-primary underline sm:ml-auto">Connecte-toi pour cocher tes cartes</a>
+        }
+      </div>
+
+      <div class="mb-3 flex gap-1 overflow-x-auto">
+        @for (option of filters; track option.value) {
+          <button type="button" class="btn btn-sm" [class]="filter() == option.value ? 'bg-white/25' : 'bg-black/25 hover:bg-black/40'" (click)="filter.set(option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      @if (!visible().length) {
+        <p class="p-6 text-center text-white/60">Aucune carte ici.</p>
+      }
+      <div class="grid grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(8rem,1fr))]">
+        @for (card of visible(); track card.imageId) {
+          @let owned = collection.owned().has(card.id);
+          @let wanted = collection.wanted().has(card.id);
+          <div class="relative">
+            <button type="button" class="block w-full cursor-pointer rounded" [class.ring-3]="selected()?.id == card.id" [class.ring-primary]="selected()?.id == card.id"
+              (click)="select(card)" [title]="prefs.cardName(card)">
+              <img [src]="imgUrl('small', card.imageId)" [alt]="prefs.cardName(card)" loading="lazy" class="card-ratio block w-full rounded bg-black/30" [class.opacity-55]="owned && filter() == 'all'">
+            </button>
+            <div class="absolute top-0 right-0 flex rounded-tr rounded-bl bg-black/60">
+              <button type="button" class="cursor-pointer px-1.5 py-1 text-lg leading-none" (click)="collection.toggleOwned(card.id)" [title]="owned ? 'Possédée' : 'Marquer possédée'">
+                <i class="bi" [class.bi-postage-fill]="owned" [class.text-owned]="owned" [class.bi-postage]="!owned"></i>
+              </button>
+              <button type="button" class="cursor-pointer px-1.5 py-1 text-lg leading-none" (click)="collection.toggleWanted(card.id)" [title]="wanted ? 'Voulue' : 'Marquer voulue'">
+                <i class="bi" [class.bi-heart-fill]="wanted" [class.text-wanted]="wanted" [class.bi-heart]="!wanted"></i>
+              </button>
+            </div>
+            <span class="absolute bottom-1 left-1 rounded bg-black/65 px-1 text-xs">{{ formatPrice(card.price) }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- aperçu : colonne fixe sur grand écran, fenêtre par-dessus sur téléphone et tablette -->
+    @if (selected(); as card) {
+      <aside class="fixed inset-0 z-50 flex-col overflow-y-auto bg-black/95 p-4 lg:sticky lg:inset-auto lg:top-[calc(var(--top-bar)+1rem)] lg:z-auto lg:flex lg:max-h-[calc(100dvh-var(--top-bar)-2rem)] lg:w-96 lg:shrink-0 lg:rounded-lg lg:bg-surface"
+        [class.flex]="previewOpen()" [class.hidden]="!previewOpen()" (click)="previewOpen.set(false)">
+        <div class="mx-auto flex w-full max-w-sm flex-col gap-3" (click)="$event.stopPropagation()">
+          <div class="flex items-center gap-2 lg:hidden">
+            <button type="button" class="btn btn-sm btn-dark" (click)="step(-1)"><i class="bi bi-chevron-left"></i></button>
+            <button type="button" class="btn btn-sm btn-dark" (click)="step(1)"><i class="bi bi-chevron-right"></i></button>
+            <button type="button" class="btn btn-sm btn-dark ml-auto" (click)="previewOpen.set(false)"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <!-- hauteur limitée sur téléphone pour garder les boutons à l'écran -->
+          <img [src]="imgUrl('cards', card.imageId)" [alt]="prefs.cardName(card)" class="card-ratio mx-auto max-h-[52dvh] max-w-full rounded-md bg-black/30 lg:max-h-none lg:w-full">
+          <div>
+            <h2 class="text-lg font-medium">{{ prefs.cardName(card) }}</h2>
+            @if (prefs.language() == 'fr' && card.nameFr) {
+              <p class="text-sm text-white/55">{{ card.name }}</p>
+            }
+            <p class="mt-1 text-sm text-white/80">
+              {{ typeLine(card) }}
+              @if (card.attribute) { · {{ card.attribute }} }
+              @if (card.level) { · Niv. {{ card.level }} }
+              @if (card.linkval) { · Link {{ card.linkval }} }
+              @if (card.scale !== undefined) { · Échelle {{ card.scale }} }
+            </p>
+            @if (card.atk !== undefined) {
+              <p class="text-sm">ATK {{ card.atk }}@if (card.def !== undefined) { / DEF {{ card.def }}}</p>
+            }
+            <p class="mt-1 text-sm">Cardmarket : {{ formatPrice(card.price) }}</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn flex-1" [class]="collection.owned().has(card.id) ? 'bg-green-700' : 'btn-box'" (click)="collection.toggleOwned(card.id)">
+              <i class="bi bi-postage-fill"></i> {{ collection.owned().has(card.id) ? 'Possédée' : 'Je l\'ai' }}
+            </button>
+            <button type="button" class="btn flex-1" [class]="collection.wanted().has(card.id) ? 'bg-rose-700' : 'btn-box'" (click)="collection.toggleWanted(card.id)">
+              <i class="bi bi-heart-fill"></i> {{ collection.wanted().has(card.id) ? 'Voulue' : 'Je la veux' }}
+            </button>
+          </div>
+          @if (selectedDescription(); as text) {
+            <p class="text-sm leading-relaxed whitespace-pre-line text-white/85">{{ text }}</p>
+          }
+        </div>
+      </aside>
+    }
+  </div>
+}

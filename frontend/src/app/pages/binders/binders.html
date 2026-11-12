@@ -1,0 +1,45 @@
+<div class="mx-auto max-w-[110rem] p-3 sm:p-4">
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <h1 class="mr-auto text-xl font-medium">Mes classeurs</h1>
+    <label class="btn btn-box" title="Importer un fichier YGOToolsBinders.json de l'ancien site">
+      <i class="bi bi-upload"></i> Importer
+      <input #file type="file" accept=".json,application/json" class="hidden" (change)="importFile(file)">
+    </label>
+    <button type="button" class="btn btn-primary" (click)="create()"><i class="bi bi-plus-lg"></i> Nouveau classeur</button>
+  </div>
+
+  @if (!binders()) {
+    <p class="p-8 text-center text-white/60"><i class="bi bi-arrow-repeat inline-block animate-spin"></i> Chargement...</p>
+  } @else if (!binders()!.length) {
+    <div class="p-8 text-center text-white/70">
+      <p class="mb-4">Pas encore de classeur. Un classeur, ce sont des pages de 9 cases : place-y des cartes pour voir le rendu avant de commander.</p>
+      <button type="button" class="btn btn-primary" (click)="create()"><i class="bi bi-plus-lg"></i> Créer mon premier classeur</button>
+    </div>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]">
+    @for (binder of binders(); track binder.id) {
+      <div class="panel flex gap-3 p-3">
+        <a [routerLink]="['/classeurs', binder.id]" class="grid w-28 shrink-0 grid-cols-3 gap-0.5 self-start rounded bg-sunken p-1">
+          @for (slot of [0, 1, 2, 3, 4, 5, 6, 7, 8]; track slot) {
+            @if (binder.preview[slot]; as imageId) {
+              <img [src]="imgUrl('small', imageId)" alt="" loading="lazy" class="card-ratio w-full rounded-sm">
+            } @else {
+              <span class="card-ratio rounded-sm bg-white/5"></span>
+            }
+          }
+        </a>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          <a [routerLink]="['/classeurs', binder.id]" class="truncate text-lg font-medium hover:underline">{{ binder.name }}</a>
+          <span class="text-sm text-white/75">{{ binder.cardCount }} cartes · {{ binder.pageCount }} pages</span>
+          <span class="text-sm text-white/75">Total {{ formatPrice(binder.totalPrice) }}</span>
+          <span class="text-sm text-white/75">À acheter {{ formatPrice(binder.toBuyPrice) }}</span>
+          <div class="mt-auto flex gap-2 pt-2">
+            <a [routerLink]="['/classeurs', binder.id]" class="btn btn-sm btn-primary flex-1">Ouvrir</a>
+            <button type="button" class="btn btn-sm btn-box" (click)="remove(binder)" title="Supprimer"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

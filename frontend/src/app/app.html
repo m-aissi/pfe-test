@@ -1,0 +1,71 @@
+<header class="fixed inset-x-0 top-0 z-40 flex h-(--top-bar) items-center gap-1 bg-bar/85 px-3 backdrop-blur">
+  <a routerLink="/" class="mr-2 flex items-center gap-2 text-lg font-medium">
+    <img src="favicon.ico" alt="" class="h-7 w-7">
+    <span class="hidden sm:inline">YGO Tools</span>
+  </a>
+
+  <!-- navigation en haut à partir de la tablette ; sur téléphone elle est en bas de l'écran -->
+  <nav class="hidden items-center gap-1 md:flex">
+    @for (link of links; track link.path) {
+      <a [routerLink]="link.path" routerLinkActive="bg-white/15" [routerLinkActiveOptions]="{ exact: link.exact }" class="btn btn-sm hover:bg-white/10">
+        <i class="bi" [class]="link.icon"></i> {{ link.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="ml-auto flex items-center gap-2">
+    <button type="button" class="btn btn-sm btn-box" (click)="toggleLanguage()" title="Langue des noms de cartes">
+      <i class="bi bi-translate"></i> {{ prefs.language() == 'fr' ? 'FR' : 'EN' }}
+    </button>
+    @if (auth.user(); as user) {
+      <a routerLink="/compte" routerLinkActive="bg-white/25" class="btn btn-sm btn-box hidden md:inline-flex">
+        <i class="bi bi-person-fill"></i> <span class="max-w-32 truncate">{{ user.username }}</span>
+      </a>
+    } @else {
+      <a routerLink="/connexion" class="btn btn-sm btn-primary">Connexion</a>
+    }
+  </div>
+</header>
+
+<main class="pt-(--top-bar) pb-(--bottom-bar)">
+  @if (legacy(); as data) {
+    <div class="flex flex-wrap items-center gap-3 bg-primary/25 px-4 py-3 text-sm">
+      <span class="grow basis-64">
+        <i class="bi bi-box-arrow-in-down"></i>
+        Des données de l'ancien site sont restées dans ce navigateur :
+        @if (data.binderCards) {
+          {{ data.binders }} classeur(s) avec {{ data.binderCards }} cartes@if (data.scytheSeen) {,}
+        }
+        @if (data.scytheSeen) {
+          le tri des faux ({{ data.scytheSeen }} illustrations vues, {{ data.scytheFound }} retenues)
+        }.
+      </span>
+      <button type="button" class="btn btn-sm btn-primary" [disabled]="importing()" (click)="importLegacy()">Les importer dans mon compte</button>
+      <button type="button" class="btn btn-sm btn-box" [disabled]="importing()" (click)="dismissLegacy()">Ne plus proposer</button>
+    </div>
+  }
+  <router-outlet />
+</main>
+
+<nav class="fixed inset-x-0 bottom-0 z-40 flex bg-bar/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+  @for (link of links; track link.path) {
+    <a [routerLink]="link.path" routerLinkActive="text-white!" [routerLinkActiveOptions]="{ exact: link.exact }"
+      class="flex h-15 flex-1 flex-col items-center justify-center gap-0.5 text-xs text-white/55">
+      <i class="bi text-xl" [class]="link.icon"></i> {{ link.label }}
+    </a>
+  }
+  <a [routerLink]="auth.user() ? '/compte' : '/connexion'" routerLinkActive="text-white!"
+    class="flex h-15 flex-1 flex-col items-center justify-center gap-0.5 text-xs text-white/55">
+    <i class="bi bi-person-fill text-xl"></i> {{ auth.user() ? 'Compte' : 'Connexion' }}
+  </a>
+</nav>
+
+<div class="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bottom-bar)+0.75rem)] z-50 flex flex-col items-center gap-2 px-3">
+  @for (toast of toasts.list(); track toast.id) {
+    <button type="button" (click)="toasts.dismiss(toast.id)"
+      class="pointer-events-auto max-w-md rounded-md px-4 py-2.5 text-left text-sm shadow-lg"
+      [class]="toast.kind == 'error' ? 'bg-red-700' : toast.kind == 'success' ? 'bg-green-700' : 'bg-bar'">
+      {{ toast.text }}
+    </button>
+  }
+</div>

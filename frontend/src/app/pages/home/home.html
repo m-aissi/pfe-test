@@ -1,0 +1,59 @@
+<div class="mx-auto max-w-[110rem] p-3 sm:p-4">
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <input class="input grow basis-60 sm:max-w-sm" type="search" placeholder="Filtrer par nom d'archétype" [(ngModel)]="filter" (ngModelChange)="onFilter()">
+
+    @if (auth.user() && data(); as list) {
+      <span class="flex items-center gap-3 px-1 text-sm whitespace-nowrap">
+        <span title="Cartes possédées">{{ list.totals.owned }} <i class="bi bi-postage-fill"></i></span>
+        <span title="Prix des cartes voulues pas encore possédées">{{ formatPrice(list.totals.wantedPrice) }} <i class="bi bi-heart-fill text-wanted"></i></span>
+      </span>
+    }
+
+    <div class="flex flex-wrap gap-2 sm:ml-auto">
+      @if (auth.user()) {
+        <button type="button" class="btn btn-primary" (click)="copyWantlist()"><i class="bi bi-clipboard"></i> Wantlist</button>
+      }
+      <a routerLink="/archetypes/nouveau" class="btn btn-box"><i class="bi bi-plus-lg"></i> Créer</a>
+      <a routerLink="/archetypes/fusion" class="btn btn-box"><i class="bi bi-union"></i> Fusionner</a>
+    </div>
+  </div>
+
+  @if (!data()) {
+    <p class="p-8 text-center text-white/60"><i class="bi bi-arrow-repeat inline-block animate-spin"></i> Chargement des archétypes...</p>
+  } @else if (!filtered().length) {
+    <p class="p-8 text-center text-white/60">Aucun archétype ne correspond</p>
+  }
+
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] sm:gap-4">
+    @for (archetype of visible(); track archetype.key) {
+      <div role="link" tabindex="0" (click)="open(archetype)" (keydown.enter)="open(archetype)"
+        class="group relative flex h-36 cursor-pointer overflow-hidden rounded-md bg-sunken bg-cover bg-[center_30%] text-left shadow-md sm:h-48"
+        [style.background-image]="archetype.cover ? 'url(' + imgUrl('cropped', archetype.cover) + ')' : null">
+        <button type="button" class="absolute top-1.5 right-1.5 cursor-pointer rounded bg-black/50 px-1.5 py-0.5 text-xl hover:bg-black/70"
+          [title]="archetype.favorite ? 'Retirer des favoris' : 'Mettre en favori'"
+          (click)="toggleFavorite(archetype, $event)" (keydown.enter)="$event.stopPropagation()">
+          <i class="bi" [class.bi-star-fill]="archetype.favorite" [class.text-amber-400]="archetype.favorite" [class.bi-star]="!archetype.favorite"></i>
+        </button>
+        @if (archetype.kind != 'official') {
+          <span class="absolute top-1.5 left-1.5 rounded bg-primary/80 px-1.5 py-0.5 text-xs">{{ archetype.kind == 'scythe' ? 'Chasse aux faux' : 'Perso' }}</span>
+        }
+        <span class="mt-auto w-full bg-black/55 px-2.5 py-2 transition-colors group-hover:bg-black/70">
+          <span class="block truncate text-lg font-medium sm:text-xl">{{ archetype.name }}</span>
+          <span class="mt-1 flex items-center gap-3 text-sm">
+            <span title="Prix des cartes pas encore possédées">{{ formatPrice(archetype.remainingPrice) }}</span>
+            @if (archetype.wantedPrice) {
+              <span title="Prix des cartes voulues pas encore possédées">{{ formatPrice(archetype.wantedPrice) }} <i class="bi bi-heart-fill text-wanted"></i></span>
+            }
+            <span class="ml-auto" title="Cartes possédées">{{ archetype.ownedCount }}/{{ archetype.cardCount }} <i class="bi bi-postage-fill"></i></span>
+          </span>
+        </span>
+      </div>
+    }
+  </div>
+
+  @if (visible().length < filtered().length) {
+    <div class="p-6 text-center">
+      <button type="button" class="btn btn-box" (click)="showMore()">Afficher plus ({{ filtered().length - visible().length }} restants)</button>
+    </div>
+  }
+</div>

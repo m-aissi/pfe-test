@@ -1,0 +1,128 @@
+@if (notFound()) {
+  <div class="p-8 text-center">
+    <p class="mb-4 text-white/70">Classeur introuvable.</p>
+    <a routerLink="/classeurs" class="btn btn-box">Retour aux classeurs</a>
+  </div>
+} @else if (!binder()) {
+  <p class="p-8 text-center text-white/60"><i class="bi bi-arrow-repeat inline-block animate-spin"></i> Chargement...</p>
+} @else {
+  @let b = binder()!;
+  <div class="page-fill flex gap-3 p-2 sm:p-3" (wheel)="onWheel($event)">
+
+    <!-- recherche : colonne à gauche sur grand écran, panneau qui monte du bas sur téléphone -->
+    <aside class="fixed inset-x-0 bottom-(--bottom-bar) z-30 h-[65dvh] flex-col rounded-t-xl bg-surface p-3 shadow-[0_-8px_24px_rgb(0_0_0/0.5)] md:static md:z-auto md:flex md:h-auto md:w-[min(23rem,30vw)] md:shrink-0 md:rounded-lg md:shadow-none"
+      [class.flex]="searchOpen()" [class.hidden]="!searchOpen()"
+      (dragover)="$event.preventDefault()" (drop)="onDropOnSearch($event)">
+      <div class="mb-2 flex items-center justify-between md:hidden">
+        <span class="font-medium">Ajouter des cartes</span>
+        <button type="button" class="btn btn-sm btn-dark" (click)="searchOpen.set(false)"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <p class="mb-2 text-xs text-white/60">
+        Choisis une illustration puis touche des cases, ou glisse-la dans le classeur. <i class="bi bi-plus-lg"></i> : première case libre.
+      </p>
+      <div class="min-h-0 flex-1">
+        <app-card-search mode="artworks" [draggable]="true" quickLabel="Placer dans la première case libre" [selectedImageId]="selectedItem()?.imageId ?? null"
+          (pick)="selectItem($event)" (quick)="autoPlace($event)" (dragStart)="onSearchDragStart($event)" (dragEnd)="onDragEnd()" />
+      </div>
+    </aside>
+
+    <section class="flex min-w-0 flex-1 flex-col gap-2">
+      <div class="flex items-center gap-1.5">
+        <a routerLink="/classeurs" class="btn btn-sm btn-dark shrink-0" title="Mes classeurs"><i class="bi bi-arrow-left"></i></a>
+        <button type="button" class="min-w-0 truncate text-lg font-medium hover:underline" (click)="rename()" title="Renommer">{{ b.name }}</button>
+        <span class="shrink-0 text-xs text-white/55" [class.text-red-300]="saveState() == 'error'">
+          @switch (saveState()) {
+            @case ('saved') { <i class="bi bi-cloud-check" title="Enregistré"></i><span class="hidden sm:inline"> Enregistré</span> }
+            @case ('error') { Échec <button type="button" class="underline" (click)="retrySave()">réessayer</button> }
+            @default { <i class="bi bi-cloud-arrow-up" title="Enregistrement..."></i><span class="hidden sm:inline"> Enregistrement...</span> }
+          }
+        </span>
+
+        <span class="ml-auto shrink-0 text-sm" title="Prix des cartes pas encore possédées">
+          <span class="hidden lg:inline">{{ slots().length }} cartes · {{ formatPrice(totalPrice()) }} · </span>
+          <i class="bi bi-cart sm:hidden"></i><span class="hidden sm:inline">à acheter </span>{{ formatPrice(toBuyPrice()) }}
+        </span>
+        <button type="button" class="btn btn-sm btn-primary shrink-0" (click)="copyWantlist()" title="Copier les cartes à acheter (format wantlist Cardmarket)"><i class="bi bi-clipboard"></i><span class="hidden sm:inline">Wantlist</span></button>
+        <button type="button" class="btn btn-sm shrink-0 md:hidden" [class]="showSettings() ? 'bg-white/25' : 'btn-box'" (click)="showSettings.set(!showSettings())" title="Réglages du classeur"><i class="bi bi-gear-fill"></i></button>
+      </div>
+
+      <!-- réglages : toujours visibles sur grand écran, derrière la roue dentée sur téléphone -->
+      <div class="flex-wrap items-center gap-1.5 text-sm md:flex" [class.flex]="showSettings()" [class.hidden]="!showSettings()">
+        <button type="button" class="btn btn-sm btn-box" (click)="removeSheet()" title="Retirer la dernière feuille (2 pages)"><i class="bi bi-dash-lg"></i></button>
+        <span>{{ pageCount() }} pages</span>
+        <button type="button" class="btn btn-sm btn-box" (click)="addSheet()" title="Ajouter une feuille (2 pages)"><i class="bi bi-plus-lg"></i></button>
+        <label class="ml-2 flex cursor-pointer items-center gap-1.5" title="Comme dans un vrai classeur : la page 1 est à droite, face à la couverture">
+          <input type="checkbox" [checked]="b.firstPageAlone" (change)="toggleFirstPageAlone()"> 1re page seule
+        </label>
+        <button type="button" class="btn btn-sm btn-box ml-auto" (click)="remove()" title="Supprimer le classeur"><i class="bi bi-trash"></i></button>
+      </div>
+
+      @if (selectedItem(); as item) {
+        <div class="flex items-center gap-2 rounded-md bg-primary/30 px-2 py-1.5 text-sm">
+          <img [src]="imgUrl('small', item.imageId)" alt="" class="card-ratio w-7 rounded-sm">
+          <span class="min-w-0 flex-1 truncate"><b>{{ prefs.cardName(item.card) }}</b> : touche les cases où la poser</span>
+          <button type="button" class="btn btn-sm btn-dark" (click)="clearSelection()">Terminer</button>
+        </div>
+      } @else if (pickedSlot(); as ref) {
+        @if (pickedCard(); as card) {
+          <div class="flex flex-wrap items-center gap-1.5 rounded-md bg-black/35 px-2 py-1.5 text-sm">
+            <span class="min-w-0 flex-1 truncate">{{ moving() ? 'Touche la case de destination' : prefs.cardName(card) }}</span>
+            @if (!moving()) {
+              <button type="button" class="btn btn-sm" [class]="card.owned ? 'bg-green-700' : 'btn-box'" (click)="toggleOwned(ref.page, ref.slot)">
+                <i class="bi bi-check-lg"></i> {{ card.owned ? 'Possédée' : 'À acheter' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-box" (click)="moving.set(true)"><i class="bi bi-arrows-move"></i> Déplacer</button>
+              <button type="button" class="btn btn-sm btn-box" (click)="removeCard(ref.page, ref.slot)"><i class="bi bi-x-lg"></i> Retirer</button>
+            }
+            <button type="button" class="btn btn-sm btn-dark" (click)="clearSelection()"><i class="bi bi-x"></i></button>
+          </div>
+        }
+      }
+
+      <div class="flex min-h-0 flex-1 items-center gap-1 sm:gap-2">
+        <button type="button" class="btn btn-dark hidden md:inline-flex" (click)="previous()" [disabled]="!canPrevious()" title="Page précédente"><i class="bi bi-chevron-left"></i></button>
+        <div #scroll class="flex min-w-0 flex-1 self-stretch overflow-auto">
+          <div class="spread" [class.single]="single()" [style.--zoom]="zoom()">
+            @for (page of shown(); track $index) {
+              <div class="binder-page" [class.cover]="page === null">
+                @if (page !== null) {
+                  @for (slot of b.pages[page]; track $index; let index = $index) {
+                    @let key = page + '-' + index;
+                    <div class="slot" [class.can-place]="selectedItem() || moving()" [class.drag-over]="dragOver() == key" [class.picked]="isPicked(page, index)"
+                      (click)="onSlotClick(page, index)" (dragover)="onDragOver($event, key)" (dragleave)="dragOver.set(null)" (drop)="onDrop($event, page, index)">
+                      @if (slot) {
+                        <div class="h-full cursor-grab" draggable="true" (dragstart)="onSlotDragStart($event, page, index)" (dragend)="onDragEnd()"
+                          [title]="prefs.cardName(slot) + ' · ' + formatPrice(slot.price)">
+                          <img [src]="imgUrl('cards', slot.imageId)" [alt]="prefs.cardName(slot)" loading="lazy">
+                          @if (slot.owned) {
+                            <i class="bi bi-check-circle-fill absolute right-1 bottom-0.5 text-owned drop-shadow"></i>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <button type="button" class="btn btn-dark hidden md:inline-flex" (click)="next()" [disabled]="!canNext()" title="Page suivante"><i class="bi bi-chevron-right"></i></button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-1.5 text-sm">
+        <!-- sur téléphone, les flèches sont ici pour laisser toute la largeur à la page -->
+        <button type="button" class="btn btn-sm btn-dark md:hidden" (click)="previous()" [disabled]="!canPrevious()" title="Page précédente"><i class="bi bi-chevron-left"></i></button>
+        <span class="md:mr-2">{{ label() }}</span>
+        <button type="button" class="btn btn-sm btn-dark md:hidden" (click)="next()" [disabled]="!canNext()" title="Page suivante"><i class="bi bi-chevron-right"></i></button>
+        <button type="button" class="btn btn-sm btn-primary md:hidden" (click)="searchOpen.set(true)"><i class="bi bi-plus-lg"></i> Cartes</button>
+        <!-- sur téléphone, on zoome en pinçant l'écran -->
+        <button type="button" class="btn btn-sm btn-box hidden md:inline-flex" (click)="zoomOut()" title="Dézoomer (Ctrl - ou Ctrl + molette)"><i class="bi bi-zoom-out"></i></button>
+        <button type="button" class="btn btn-sm btn-box hidden min-w-16 md:inline-flex" (click)="setZoom(1)" title="Revenir à 100 % (Ctrl 0)">{{ zoomPercent() }} %</button>
+        <button type="button" class="btn btn-sm btn-box hidden md:inline-flex" (click)="zoomIn()" title="Zoomer (Ctrl + ou Ctrl + molette)"><i class="bi bi-zoom-in"></i></button>
+        <button type="button" class="btn btn-sm btn-primary md:ml-2" (click)="screenshot()" [disabled]="screenshotLoading()" title="Télécharger la double page en haute résolution">
+          @if (screenshotLoading()) { <i class="bi bi-arrow-repeat inline-block animate-spin"></i> } @else { <i class="bi bi-camera"></i> }<span class="hidden sm:inline">Screen</span>
+        </button>
+      </div>
+    </section>
+  </div>
+}

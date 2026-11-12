@@ -1,0 +1,61 @@
+<div class="mx-auto flex max-w-6xl flex-col gap-3 p-3 sm:p-4">
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <h1 class="text-xl font-medium">Chasse aux faux</h1>
+    <span class="text-sm">{{ seenCount() }} / {{ total() }} vues</span>
+    <span class="text-sm">{{ foundCount() }} <i class="bi bi-check-circle-fill text-owned"></i> trouvées</span>
+    <div class="flex w-full gap-2 sm:ml-auto sm:w-auto">
+      <button type="button" class="btn btn-sm flex-1 sm:flex-none" [class]="prioritize() ? 'btn-active' : 'btn-box'" (click)="togglePriority()" title="Montrer d'abord les cartes dont le nom ou le texte parle de faux">
+        <i class="bi bi-lightning-fill"></i> Probables d'abord
+      </button>
+      <button type="button" class="btn btn-sm btn-box flex-1 sm:flex-none" [disabled]="!history().length || loading()" (click)="undo()">
+        <i class="bi bi-arrow-counterclockwise"></i> Retour
+      </button>
+    </div>
+  </div>
+
+  <div class="h-1.5 overflow-hidden rounded bg-black/30">
+    <div class="h-full bg-green-600 transition-[width]" [style.width.%]="progress()"></div>
+  </div>
+  <p class="hidden text-sm text-white/55 sm:block">
+    Clic : faux / pas faux · Clic droit ou <i class="bi bi-arrows-fullscreen"></i> : agrandir · Entrée : valider la page · Retour arrière : annuler la dernière page
+  </p>
+
+  @if (!loading() && !page().length) {
+    <p class="p-8 text-center text-lg">
+      Tout est trié !<br>
+      <span class="text-sm text-white/55">Les nouvelles cartes apparaîtront ici à leur sortie.</span>
+    </p>
+  }
+
+  <div class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6" [class.opacity-60]="loading()">
+    @for (item of page(); track item.imageId) {
+      @let isSelected = selected().has(item.imageId);
+      <div class="relative aspect-square cursor-pointer overflow-hidden rounded border-3" [class]="isSelected ? 'border-green-500' : 'border-transparent'"
+        (click)="toggle(item)" (contextmenu)="zoom(item, $event)" [title]="prefs.cardName(item)">
+        <img [src]="imgUrl('cropped', item.imageId)" [alt]="prefs.cardName(item)" class="pointer-events-none block h-full w-full bg-black/30 object-cover">
+        @if (isSelected) {
+          <i class="bi bi-check-circle-fill absolute top-0.5 left-1 text-2xl text-green-500 drop-shadow"></i>
+        }
+        <button type="button" class="absolute right-0 bottom-0 cursor-pointer rounded-tl bg-black/60 px-1.5 py-0.5" (click)="zoom(item, $event)" title="Agrandir">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (page().length) {
+    <!-- bouton de validation toujours à portée de pouce sur téléphone -->
+    <div class="sticky bottom-[calc(var(--bottom-bar)+0.5rem)] flex justify-center">
+      <button type="button" class="btn btn-primary w-full max-w-sm shadow-lg" [disabled]="loading()" (click)="validate()">
+        Valider la page ({{ selected().size }} faux) <i class="bi bi-arrow-return-left"></i>
+      </button>
+    </div>
+  }
+</div>
+
+@if (zoomed(); as item) {
+  <div class="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-2 bg-black/85 p-4" (click)="zoomed.set(null)" (contextmenu)="$event.preventDefault(); zoomed.set(null)">
+    <img [src]="imgUrl('cards', item.imageId)" [alt]="prefs.cardName(item)" class="card-ratio max-h-[85dvh] max-w-full rounded-md">
+    <p>{{ prefs.cardName(item) }}</p>
+  </div>
+}
