@@ -1,0 +1,10 @@
+{
+  "/ygo-img": {
+    "target": "https://images.ygoprodeck.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/ygo-img": "/images"
+    }
+  }
+}

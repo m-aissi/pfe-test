@@ -1,4 +1,4 @@
-<div class="d-flex h-100 gap-3 p-3" data-bs-theme="dark">
+<div class="d-flex h-100 gap-3 p-3" data-bs-theme="dark" (wheel)="onWheel($event)">
 
     <!-- recherche de cartes : on peut aussi y glisser une carte du classeur pour la retirer -->
     <div class="search-panel d-flex flex-column" (dragover)="$event.preventDefault()" (drop)="onDropOnSearch($event)">
@@ -33,7 +33,7 @@
     </div>
 
     <!-- classeur -->
-    <div class="flex-grow-1 d-flex flex-column">
+    <div class="binder-panel flex-grow-1 d-flex flex-column">
         <div class="d-flex flex-wrap align-items-center gap-1 mb-2">
             <select [ngModel]="binderIndex" (ngModelChange)="selectBinder($event)" class="form-select form-select-sm w-auto">
                 <option *ngFor="let b of binders; let i = index" [ngValue]="i">{{b.name}}</option>
@@ -59,10 +59,10 @@
             <button class="btn btn-sm bg-box" (click)="dialogRef.close()" title="Fermer"><i class="bi bi-x-lg"></i></button>
         </div>
 
-        <div class="d-flex align-items-center justify-content-center flex-grow-1 gap-2">
+        <div class="spread-row d-flex align-items-center flex-grow-1 gap-2">
             <button class="btn btn-dark" (click)="previousSpread()" [disabled]="spreadIndex == 0"><i class="bi bi-chevron-left"></i></button>
-            <div>
-                <div class="spread">
+            <div #spreadScroll class="spread-scroll">
+                <div class="spread" [style.--zoom]="zoom">
                     <div *ngFor="let page of [leftPage, rightPage]" class="binder-page" [class.cover]="page === null">
                         <ng-container *ngIf="page !== null">
                             <div *ngFor="let card of binder.pages[page]; let slot = index" class="slot"
@@ -81,9 +81,18 @@
                         </ng-container>
                     </div>
                 </div>
-                <div class="text-center mt-2">{{spreadLabel}}</div>
             </div>
             <button class="btn btn-dark" (click)="nextSpread()" [disabled]="spreadIndex >= spreadCount - 1"><i class="bi bi-chevron-right"></i></button>
+        </div>
+
+        <div class="d-flex justify-content-center align-items-center gap-1 mt-2">
+            <span class="me-3">{{spreadLabel}}</span>
+            <button class="btn btn-sm bg-box" (click)="zoomOut()" title="Dézoomer (Ctrl - ou Ctrl + molette)"><i class="bi bi-zoom-out"></i></button>
+            <button class="btn btn-sm bg-box zoom-value" (click)="setZoom(1)" title="Revenir à 100 % (Ctrl 0)">{{zoomPercent}} %</button>
+            <button class="btn btn-sm bg-box" (click)="zoomIn()" title="Zoomer (Ctrl + ou Ctrl + molette)"><i class="bi bi-zoom-in"></i></button>
+            <button class="btn btn-sm btn-primary ms-3" (click)="screenshotSpread()" [disabled]="screenshotLoading" title="Télécharger la double page en haute résolution">
+                Screen <i *ngIf="!screenshotLoading" class="bi bi-camera"></i><span *ngIf="screenshotLoading" class="spinner-border spinner-border-sm"></span>
+            </button>
         </div>
     </div>
 </div>

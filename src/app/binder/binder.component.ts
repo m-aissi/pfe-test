@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import axios from 'axios';
 
@@ -30,6 +30,26 @@ const STORAGE_KEY = 'ygotools-binders';
 const SLOTS_PER_PAGE = 9;
 const DEFAULT_PAGES = 20;
 const SEARCH_PAGE_SIZE = 30;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 6;
+const ZOOM_STEP = 1.25;
+
+// ygoprodeck n'envoie pas de header CORS : pour dessiner les cartes dans un canvas exportable,
+// les images doivent venir de notre domaine (proxy Caddy en prod, proxy.conf.json avec ng serve)
+const YGOPRODECK_IMAGES = 'https://images.ygoprodeck.com/images/';
+const IMAGE_PROXY = '/ygo-img/';
+
+// mise en page du screen en pixels, calée sur la résolution native des images ygoprodeck (813x1185)
+const SHOT = { cardW: 813, cardH: 1185, gap: 36, pagePad: 56, pageSpacing: 90, margin: 90, captionH: 120 };
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Image introuvable : ' + src));
+    img.src = src;
+  });
+}
 
 @Component({
   selector: 'app-binder',
@@ -54,6 +74,10 @@ export class BinderComponent {
   selectedCard: BinderCard | null = null;
   dragOverSlot: string | null = null;
   private dragSource: DragSource | null = null;
+
+  zoom = 1;
+  screenshotLoading = false;
+  @ViewChild('spreadScroll') spreadScroll!: ElementRef<HTMLElement>;
 
   constructor(public dialogRef: MatDialogRef<BinderComponent>) {
     this.load();
@@ -83,8 +107,13 @@ export class BinderComponent {
     return p < this.binder.pages.length ? p : null;
   }
 
+  // numéros (à partir de 1) des pages affichées
+  get spreadPageNumbers(): number[] {
+    return [this.leftPage, this.rightPage].filter(p => p !== null).map(p => p! + 1);
+  }
+
   get spreadLabel(): string {
-    const pages = [this.leftPage, this.rightPage].filter(p => p !== null).map(p => p! + 1);
+    const pages = this.spreadPageNumbers;
     return 'Page' + (pages.length > 1 ? 's ' : ' ') + pages.join('-') + ' / ' + this.binder.pages.length;
   }
 
@@ -326,6 +355,18 @@ export class BinderComponent {
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
+    // Ctrl +/-/0 zooment le classeur au lieu de la page (event.code pour le 0, qui donne "à" en AZERTY)
+    if (event.ctrlKey || event.metaKey) {
+      const zoomAction = event.key == '+' || event.key == '=' ? () => this.zoomIn()
+        : event.key == '-' ? () => this.zoomOut()
+        : event.code == 'Digit0' || event.code == 'Numpad0' ? () => this.setZoom(1)
+        : null;
+      if (zoomAction) {
+        event.preventDefault();
+        zoomAction();
+        return;
+      }
+    }
     if (event.key == 'Escape') {
       if (this.selectedCard) this.selectedCard = null;
       else this.dialogRef.close();
@@ -334,6 +375,127 @@ export class BinderComponent {
     if (target.tagName == 'INPUT' || target.tagName == 'SELECT') return;
     if (event.key == 'ArrowLeft') this.previousSpread();
     if (event.key == 'ArrowRight') this.nextSpread();
+  }
+
+  // ---------- Zoom ----------
+
+  get zoomPercent(): number {
+    return Math.round(this.zoom * 100);
+  }
+
+  // zoome en gardant fixe le point (x, y) de la zone de scroll : le curseur pour la molette, le centre pour les boutons
+  setZoom(zoom: number, x?: number, y?: number) {
+    const el = this.spreadScroll.nativeElement;
+    const newZoom = Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM);
+    const ratio = newZoom / this.zoom;
+    const originX = x ?? el.clientWidth / 2;
+    const originY = y ?? el.clientHeight / 2;
+    const scrollLeft = (el.scrollLeft + originX) * ratio - originX;
+    const scrollTop = (el.scrollTop + originY) * ratio - originY;
+    this.zoom = newZoom;
+    // le scroll doit être appliqué une fois le DOM agrandi
+    requestAnimationFrame(() => el.scrollTo(scrollLeft, scrollTop));
+  }
+
+  zoomIn() {
+    this.setZoom(this.zoom * ZOOM_STEP);
+  }
+
+  zoomOut() {
+    this.setZoom(this.zoom / ZOOM_STEP);
+  }
+
+  // Ctrl + molette (ou pincement sur trackpad) n'importe où dans le dialog : zoome le classeur plutôt que toute la page,
+  // autour du curseur s'il est sur le classeur, sinon autour du point le plus proche
+  onWheel(event: WheelEvent) {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    const delta = event.deltaMode == 1 ? event.deltaY * 33 : event.deltaY; // Firefox compte en lignes
+    const rect = this.spreadScroll.nativeElement.getBoundingClientRect();
+    const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
+    const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
+    this.setZoom(this.zoom * Math.exp(-Math.max(Math.min(delta, 100), -100) * 0.002), x, y);
+  }
+
+  // ---------- Screen ----------
+
+  // dessine la double page affichée en pleine résolution et la télécharge en JPEG
+  async screenshotSpread() {
+    const pages = [this.leftPage, this.rightPage];
+    const cards = pages.flatMap(p => p === null ? [] : this.binder.pages[p]).filter((card): card is BinderCard => card !== null);
+    this.screenshotLoading = true;
+    try {
+      const images = new Map<string, HTMLImageElement>();
+      const urls = [...new Set(cards.map(card => card.cardImg))];
+      await Promise.all(urls.map(url => loadImage(url.replace(YGOPRODECK_IMAGES, IMAGE_PROXY)).then(img => images.set(url, img))));
+
+      const canvas = this.drawSpread(pages, images);
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+      if (!blob) throw new Error('Export du canvas impossible');
+
+      const element = document.createElement('a');
+      element.href = URL.createObjectURL(blob);
+      element.download = (this.binder.name + ' - pages ' + this.spreadPageNumbers.join('-')).replace(/[\\/:*?"<>|]/g, '-') + '.jpg';
+      element.click();
+      setTimeout(() => URL.revokeObjectURL(element.href), 1000);
+    } catch (error) {
+      console.error(error);
+      alert("Impossible de générer le screen : les images doivent passer par le proxy " + IMAGE_PROXY + " (config Caddy)");
+    } finally {
+      this.screenshotLoading = false;
+    }
+  }
+
+  private drawSpread(pages: (number | null)[], images: Map<string, HTMLImageElement>): HTMLCanvasElement {
+    const pageW = SHOT.pagePad * 2 + SHOT.cardW * 3 + SHOT.gap * 2;
+    const pageH = SHOT.pagePad * 2 + SHOT.cardH * 3 + SHOT.gap * 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = SHOT.margin * 2 + pageW * 2 + SHOT.pageSpacing;
+    canvas.height = SHOT.margin + pageH + SHOT.captionH;
+    const ctx = canvas.getContext('2d')!;
+
+    ctx.fillStyle = '#553939';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    pages.forEach((page, side) => {
+      const x = SHOT.margin + side * (pageW + SHOT.pageSpacing);
+      const y = SHOT.margin;
+
+      // fond de la page (ou de la couverture) avec son ombre, comme dans l'appli
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 60;
+      ctx.shadowOffsetY = 20;
+      ctx.fillStyle = page === null ? '#3a2828' : '#2a1c1c';
+      ctx.beginPath();
+      ctx.roundRect(x, y, pageW, pageH, 28);
+      ctx.fill();
+      ctx.restore();
+      if (page === null) return;
+
+      this.binder.pages[page].forEach((card, slot) => {
+        const slotX = x + SHOT.pagePad + (slot % 3) * (SHOT.cardW + SHOT.gap);
+        const slotY = y + SHOT.pagePad + Math.floor(slot / 3) * (SHOT.cardH + SHOT.gap);
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(slotX, slotY, SHOT.cardW, SHOT.cardH, 16);
+        if (card) {
+          ctx.clip();
+          ctx.drawImage(images.get(card.cardImg)!, slotX, slotY, SHOT.cardW, SHOT.cardH);
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+    });
+
+    ctx.font = '500 48px Roboto, "Helvetica Neue", sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.binder.name + ' · ' + this.spreadLabel.replace(/ \/ \d+$/, ''), canvas.width - SHOT.margin, canvas.height - SHOT.captionH / 2);
+    return canvas;
   }
 
   // ---------- Export ----------
